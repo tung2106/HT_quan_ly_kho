@@ -11,10 +11,14 @@
     <button class="btn btn-primary">Thêm</button>
   </form>
   <ul class="list-group">
-    <li class="list-group-item d-flex justify-content-between" th:each="s : ${suppliers}">
-      <span th:text="${s.name}"></span><small class="text-muted" th:text="${s.phone}"></small>
+    <li class="list-group-item d-flex flex-wrap gap-2 justify-content-between align-items-center" th:each="s : ${suppliers}">
+      <div><span th:text="${s.name}"></span><small class="text-muted d-block" th:text="${s.phone}"></small></div>
+      <form th:if="${isOwner}" method="post" th:action="@{/suppliers/{id}/delete(id=${s.id})}" onsubmit="return confirm('Xóa nhà cung cấp này khỏi danh sách chọn? Phiếu cũ và công nợ vẫn được giữ nguyên.');">
+        <button class="btn btn-outline-danger" type="submit">Xóa khỏi danh sách</button>
+      </form>
     </li>
   </ul>
+  <p class="small text-muted mt-2">Xóa khỏi danh sách chỉ ngừng chọn nhà cung cấp khi nhập mới; lịch sử nhập hàng và công nợ vẫn được giữ nguyên.</p>
 </div>
 <nav th:replace="~{fragments :: nav}"></nav>
 </body>

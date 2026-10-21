@@ -13,11 +13,19 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/suppliers")
 public class SupplierController {
     private final SupplierRepository repo;
+    private final com.vatlieu.service.SupplierService service;
 
     @GetMapping
     public String list(Model m) {
-        m.addAttribute("suppliers", repo.findAllByOrderByNameAsc());
+        m.addAttribute("suppliers", repo.findByActiveTrueOrderByNameAsc());
         return "suppliers";
+    }
+
+    @PostMapping("/{id}/delete")
+    public String delete(@PathVariable long id, RedirectAttributes ra) {
+        try { service.delete(id); ra.addFlashAttribute("msg", "Đã xóa nhà cung cấp khỏi danh sách chọn. Lịch sử và công nợ vẫn được giữ nguyên."); }
+        catch (IllegalArgumentException e) { ra.addFlashAttribute("error", e.getMessage()); }
+        return "redirect:/suppliers";
     }
 
     @PostMapping

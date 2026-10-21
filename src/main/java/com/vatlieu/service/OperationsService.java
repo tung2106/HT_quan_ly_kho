@@ -128,7 +128,7 @@ public class OperationsService {
     public List<Map<String,Object>> debts() {
         current.requireOwner();
         return jdbc.queryForList("""
-                SELECT 'sale' AS type,id,COALESCE(customer,'Khách lẻ') AS partner,total_amount,paid_amount,total_amount-paid_amount AS remaining
+                SELECT 'sale' AS type,id,COALESCE(NULLIF(TRIM(customer),''),'Khách lẻ') AS partner,total_amount,paid_amount,total_amount-paid_amount AS remaining
                 FROM outbound_order WHERE kind='SALE'
                 UNION ALL
                 SELECT 'purchase',o.id,COALESCE(s.name,'Chưa rõ NCC'),o.total_amount,o.paid_amount,o.total_amount-o.paid_amount
@@ -136,9 +136,34 @@ public class OperationsService {
                 ORDER BY remaining DESC,id DESC
                 """);
     }
-    public List<Map<String,Object>> payments() {
+    public List<Map<String,Object>> payments(boolean receipts, String from, String to, String partner) {
         current.requireOwner();
-        return jdbc.queryForList("SELECT * FROM cash_payment ORDER BY created_at DESC,id DESC");
+        java.time.LocalDate start, end;
+        try {
+            start = from.isBlank() ? null : java.time.LocalDate.parse(from);
+            end = to.isBlank() ? null : java.time.LocalDate.parse(to);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new IllegalArgumentException("Ngày lọc không hợp lệ");
+        }
+        if (start != null && end != null && start.isAfter(end))
+            throw new IllegalArgumentException("Từ ngày phải trước hoặc bằng đến ngày");
+        String sql = """
+                SELECT * FROM (
+                SELECT p.*, CASE WHEN p.outbound_id IS NOT NULL
+                    THEN COALESCE(NULLIF(TRIM(o.customer),''),'Khách lẻ')
+                    ELSE COALESCE(s.name,'Chưa rõ NCC') END AS partner
+                FROM cash_payment p
+                LEFT JOIN outbound_order o ON o.id=p.outbound_id
+                LEFT JOIN purchase_order i ON i.id=p.purchase_id
+                LEFT JOIN supplier s ON s.id=i.supplier_id
+                ) history WHERE
+                """ + (receipts ? "outbound_id" : "purchase_id") + " IS NOT NULL";
+        List<Object> args = new ArrayList<>();
+        if (start != null) { sql += " AND created_at::date >= ?"; args.add(java.sql.Date.valueOf(start)); }
+        if (end != null) { sql += " AND created_at::date <= ?"; args.add(java.sql.Date.valueOf(end)); }
+        // Tìm chuỗi con, không coi ký tự % hay _ người dùng nhập là ký tự đại diện.
+        if (!partner.isBlank()) { sql += " AND POSITION(LOWER(?) IN LOWER(partner)) > 0"; args.add(partner.trim()); }
+        return jdbc.queryForList(sql + " ORDER BY created_at DESC,id DESC", args.toArray());
     }
     public Map<String,Object> summary() {
         current.requireOwner();

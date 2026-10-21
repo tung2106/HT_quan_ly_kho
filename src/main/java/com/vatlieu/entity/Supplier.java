@@ -12,4 +12,6 @@ public class Supplier {
     private String name;
     private String phone;
     private String note;
+    @Column(nullable = false)
+    private boolean active = true;
 }

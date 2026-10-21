@@ -58,6 +58,6 @@ public class PurchaseController {
     private void populate(Model m) {
         m.addAttribute("unitOptions", units.findAll());
         m.addAttribute("products", productRepo.findByActiveTrueOrderByNameAsc());
-        m.addAttribute("suppliers", supplierRepo.findAllByOrderByNameAsc());
+        m.addAttribute("suppliers", supplierRepo.findByActiveTrueOrderByNameAsc());
     }
 }

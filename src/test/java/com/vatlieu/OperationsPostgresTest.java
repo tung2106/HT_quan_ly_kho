@@ -23,12 +23,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class OperationsPostgresTest {
     @Autowired OperationsService service;
     @Autowired PurchaseService purchases;
+    @Autowired SupplierService suppliers;
     @Autowired JdbcTemplate jdbc;
     @Autowired EntityManager em;
     @Autowired MockMvc mvc;
     @Autowired javax.sql.DataSource dataSource;
     @org.junit.jupiter.api.BeforeEach void actor() { jdbc.update("INSERT INTO app_user(username,full_name,password,role,must_change_password) VALUES ('suite-owner','Test','unused','OWNER',false) ON CONFLICT DO NOTHING"); }
-    @org.junit.jupiter.api.AfterEach void removeActor() { jdbc.update("DELETE FROM app_user WHERE username='suite-owner' AND id NOT IN (SELECT created_by FROM outbound_order WHERE created_by IS NOT NULL)"); }
+    @org.junit.jupiter.api.AfterEach void removeActor() { jdbc.update("DELETE FROM app_user WHERE username='suite-owner' AND id NOT IN (SELECT created_by FROM outbound_order WHERE created_by IS NOT NULL) AND id NOT IN (SELECT created_by FROM cash_payment WHERE created_by IS NOT NULL)"); }
     private BigDecimal n(String value) { return new BigDecimal(value); }
     private long product() {
         long category = jdbc.queryForObject("INSERT INTO category(name) VALUES (?) RETURNING id",Long.class,"Kiểm thử " + UUID.randomUUID());
@@ -66,6 +67,20 @@ class OperationsPostgresTest {
         var waste=sale(p,"0.5","0");waste.setKind("WASTE");waste.setNote("Hỏng do ẩm");
         long wasteId=service.create(waste);
         decimal("SELECT cost_amount FROM outbound_order WHERE id=?",wasteId,"100");
+        mvc.perform(get("/capital?section=receipts")).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Khách hàng: Khách kiểm thử")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Thu khách · phiếu xuất #"+id)))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Trả NCC · phiếu nhập #"))));
+        mvc.perform(get("/capital?section=payments")).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Trả NCC · phiếu nhập #"+purchase)))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Thu khách · phiếu xuất #"))));
+        mvc.perform(get("/capital?section=debts")).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Phiếu xuất bán #"+id)))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Phiếu nhập hàng #"+purchase)))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Đã thanh toán đủ")));
+        mvc.perform(get("/capital?section=unknown")).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Vốn trong kho:")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Tổng tiền phiếu:"))));
         for(String url : new String[]{"/outbound","/outbound/new","/outbound/new?kind=WASTE","/outbound/"+id,"/outbound/"+wasteId,"/capital","/stock","/purchases"})
             mvc.perform(get(url)).andExpect(status().isOk());
         org.springframework.security.core.context.SecurityContextHolder.setContext(org.springframework.security.test.context.TestSecurityContextHolder.getContext());
@@ -80,6 +95,56 @@ class OperationsPostgresTest {
         assertThat(((BigDecimal)after.get("payments")).subtract((BigDecimal)before.get("payments"))).isEqualByComparingTo("200");
         assertThat(((BigDecimal)after.get("receivable")).subtract((BigDecimal)before.get("receivable"))).isEqualByComparingTo("450");
         assertThat(((BigDecimal)after.get("payable")).subtract((BigDecimal)before.get("payable"))).isEqualByComparingTo("600");
+    }
+    @Test void xoaNhaCungCapGiuLichSuVaChanNhapMoi() throws Exception {
+        long p=product(); long purchase=receive(p,"2","100","50");
+        String name="NCC đã ẩn "+UUID.randomUUID();
+        long supplier=jdbc.queryForObject("INSERT INTO supplier(name) VALUES (?) RETURNING id",Long.class,name);
+        jdbc.update("UPDATE purchase_order SET supplier_id=? WHERE id=?",supplier,purchase);
+        mvc.perform(post("/suppliers/"+supplier+"/delete")).andExpect(status().isForbidden());
+        mvc.perform(post("/suppliers/"+supplier+"/delete").with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(redirectedUrl("/suppliers"));
+        org.springframework.security.core.context.SecurityContextHolder.setContext(org.springframework.security.test.context.TestSecurityContextHolder.getContext());
+        assertThat(jdbc.queryForObject("SELECT active FROM supplier WHERE id=?",Boolean.class,supplier)).isFalse();
+        assertThat(service.debts()).anySatisfy(row -> {
+            assertThat(row.get("partner")).isEqualTo(name);
+            assertThat((BigDecimal)row.get("remaining")).isEqualByComparingTo("150");
+        });
+        service.pay("purchase",purchase,n("150"),UUID.randomUUID(),"Trả nợ sau khi ẩn");
+        assertThat(service.payments(false,"","",name)).hasSize(2);
+        var form=new PurchaseForm();form.setSupplierId(supplier);form.getItems().add(row(p,"1","kg","100"));
+        assertThatThrownBy(() -> purchases.create(form)).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Hãy chọn lại");
+        suppliers.delete(supplier);
+        assertThatThrownBy(() -> suppliers.delete(-1)).isInstanceOf(IllegalArgumentException.class);
+        mvc.perform(get("/suppliers")).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(name))));
+        mvc.perform(get("/purchases/new")).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(name))));
+        mvc.perform(get("/purchases")).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(name)));
+    }
+    @Test void locLichSuTheoNgayVaTen() throws Exception {
+        long p=product(); long purchase=receive(p,"2","100","50");
+        long supplier=jdbc.queryForObject("INSERT INTO supplier(name) VALUES ('NCC lọc lịch sử') RETURNING id", Long.class);
+        jdbc.update("UPDATE purchase_order SET supplier_id=? WHERE id=?", supplier, purchase);
+        var f=sale(p,"1","200"); f.setCustomer("Khách Lọc 100%_A"); f.setPaidAmount(n("100"));
+        long id=service.create(f);
+        jdbc.update("UPDATE cash_payment SET created_at=TIMESTAMP '2026-10-20 00:00:00' WHERE outbound_id=?",id);
+        jdbc.update("UPDATE cash_payment SET created_at=TIMESTAMP '2026-10-20 23:59:59.999999' WHERE purchase_id=?",purchase);
+        assertThat(service.payments(true,"2026-10-20","2026-10-20","  khách lọc  "))
+                .anySatisfy(row -> assertThat(((Number)row.get("outbound_id")).longValue()).isEqualTo(id));
+        assertThat(service.payments(false,"2026-10-20","2026-10-20","ncc lọc lịch sử"))
+                .anySatisfy(row -> assertThat(((Number)row.get("purchase_id")).longValue()).isEqualTo(purchase));
+        assertThat(service.payments(true,"2026-10-21","","Khách Lọc 100%_A")).isEmpty();
+        assertThat(service.payments(false,"","2026-10-19","NCC lọc lịch sử")).isEmpty();
+        assertThat(service.payments(true,"","","100%_A")).hasSize(1);
+        assertThat(service.payments(true,"","","100%_B")).isEmpty();
+        assertThatThrownBy(() -> service.payments(true,"2026-10-21","2026-10-20",""))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Từ ngày");
+        assertThatThrownBy(() -> service.payments(true,"sai-ngay","",""))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("không hợp lệ");
+        mvc.perform(get("/capital").param("section","receipts").param("from","2026-10-20").param("to","2026-10-20").param("partner","Khách Lọc"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Thu khách · phiếu xuất #"+id)));
+        mvc.perform(get("/capital?section=payments&from=2026-10-21&to=2026-10-20"))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Từ ngày phải trước hoặc bằng đến ngày")));
     }
     @Test void quyDoiVaLamTronTongThayViTungDong() {
         long p=product();receive(p,"100","0.1","0");

@@ -52,12 +52,24 @@ public class OperationsController {
         catch (IllegalArgumentException e) { flash.addFlashAttribute("error",e.getMessage()); return "redirect:/outbound"; }
     }
     @GetMapping("/capital")
-    public String capital(Model model) {
+    public String capital(@RequestParam(defaultValue="capital") String section,
+                          @RequestParam(defaultValue="") String from,
+                          @RequestParam(defaultValue="") String to,
+                          @RequestParam(defaultValue="") String partner, Model model) {
+        if (!java.util.Set.of("capital", "debts", "receipts", "payments").contains(section)) section = "capital";
+        model.addAttribute("section", section);
         model.addAttribute("summary",service.summary());
         var debts = service.debts();
         debts.forEach(d -> d.put("request_key",UUID.randomUUID()));
         model.addAttribute("debts",debts);
-        model.addAttribute("payments",service.payments());
+        model.addAttribute("from", from);
+        model.addAttribute("to", to);
+        model.addAttribute("partner", partner);
+        model.addAttribute("payments", java.util.List.of());
+        if ("receipts".equals(section) || "payments".equals(section)) {
+            try { model.addAttribute("payments", service.payments("receipts".equals(section), from, to, partner)); }
+            catch (IllegalArgumentException e) { model.addAttribute("error", e.getMessage()); }
+        }
         return "capital";
     }
     @PostMapping("/capital/pay")
@@ -65,6 +77,6 @@ public class OperationsController {
                       @RequestParam UUID requestKey,@RequestParam(defaultValue="") String note,RedirectAttributes flash) {
         try { service.pay(type,id,amount,requestKey,note); flash.addFlashAttribute("msg","Đã ghi thanh toán"); }
         catch (IllegalArgumentException e) { flash.addFlashAttribute("error",e.getMessage()); }
-        return "redirect:/capital";
+        return "redirect:/capital?section=debts";
     }
 }

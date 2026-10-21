@@ -72,6 +72,8 @@ public class PurchaseService {
         order.setPaidAmount(nz(f.getPaidAmount()));
         order.setNote(f.getNote());
         if (f.getSupplierId() != null) {
+            if (jdbc.queryForList("SELECT id FROM supplier WHERE id=? AND active=true FOR SHARE", f.getSupplierId()).isEmpty())
+                throw new IllegalArgumentException("Nhà cung cấp đã bị xóa khỏi danh sách hoặc không tồn tại. Hãy chọn lại.");
             order.setSupplier(supplierRepo.getReferenceById(f.getSupplierId()));
         }
 

@@ -53,7 +53,7 @@ class AccessPostgresTest {
         for(String path:new String[]{"/capital","/purchases","/purchases/new","/categories","/suppliers","/products/new","/admin/users","/outbound/new?kind=WASTE"})
             mvc.perform(get(path)).andExpect(status().isForbidden());
         mvc.perform(post("/outbound").with(csrf()).param("kind","WASTE").param("note","Giả mạo")).andExpect(status().isForbidden());
-        for(String path:new String[]{"/products","/categories","/categories/1/edit","/categories/1/delete","/capital/pay","/admin/users"})
+        for(String path:new String[]{"/products","/categories","/categories/1/edit","/categories/1/delete","/suppliers/1/delete","/capital/pay","/admin/users"})
             mvc.perform(post(path).with(csrf())).andExpect(status().isForbidden());
         mvc.perform(get("/stock")).andExpect(status().isOk()).andExpect(content().string(not(containsString("Giá vốn"))));
         mvc.perform(get("/products")).andExpect(status().isOk()).andExpect(content().string(not(containsString("giá vốn"))));

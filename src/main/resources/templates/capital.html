@@ -3,6 +3,14 @@
 <head th:replace="~{fragments :: head('Vốn và công nợ')}"></head>
 <body><main class="container py-3" th:with="s=${summary}">
   <h1 class="h5">Vốn và công nợ</h1><div th:replace="~{fragments :: alerts}"></div>
+  <nav class="row g-2 mb-3" aria-label="Các mục vốn và công nợ">
+    <div class="col-6 col-md-3"><a class="btn w-100" th:classappend="${section == 'capital' ? 'btn-primary' : 'btn-outline-primary'}" th:href="@{/capital(section='capital')}">Xem vốn</a></div>
+    <div class="col-6 col-md-3"><a class="btn w-100" th:classappend="${section == 'debts' ? 'btn-primary' : 'btn-outline-primary'}" th:href="@{/capital(section='debts')}">Công nợ</a></div>
+    <div class="col-6 col-md-3"><a class="btn w-100" th:classappend="${section == 'receipts' ? 'btn-success' : 'btn-outline-success'}" th:href="@{/capital(section='receipts')}">Lịch sử thu</a></div>
+    <div class="col-6 col-md-3"><a class="btn w-100" th:classappend="${section == 'payments' ? 'btn-danger' : 'btn-outline-danger'}" th:href="@{/capital(section='payments')}">Lịch sử trả</a></div>
+  </nav>
+  <section th:if="${section == 'capital'}">
+  <h2 class="h5">Xem vốn</h2>
   <p class="small text-muted">Lũy kế toàn bộ dữ liệu đã ghi. Giá trị vốn tính từ các lô còn tồn.</p>
   <div class="card card-body mb-3">
     <p th:text="|Vốn trong kho: ${#numbers.formatDecimal(s.inventory,1,'POINT',2,'COMMA')} đ|"></p>
@@ -17,14 +25,22 @@
     <p th:text="|Đã trả nhập hàng: ${#numbers.formatDecimal(s.payments,1,'POINT',2,'COMMA')} đ|"></p>
     <p th:text="|Chênh lệch thu − trả: ${#numbers.formatDecimal(s.receipts.subtract(s.payments),1,'POINT',2,'COMMA')} đ|"></p>
     <small>Chưa tính tiền đầu kỳ, vốn góp/rút và chi phí khác; không phải số dư tiền mặt.</small>
-    <p class="mt-2" th:text="|Khách còn nợ: ${#numbers.formatDecimal(s.receivable,1,'POINT',0,'COMMA')} đ|"></p>
-    <p th:text="|Còn phải trả NCC: ${#numbers.formatDecimal(s.payable,1,'POINT',2,'COMMA')} đ|"></p>
   </div>
+  </section>
+  <section th:if="${section == 'debts'}">
   <h2 class="h5">Công nợ theo phiếu</h2>
+  <div class="card card-body mb-3">
+    <p th:text="|Khách còn nợ: ${#numbers.formatDecimal(s.receivable,1,'POINT',0,'COMMA')} đ|"></p>
+    <p class="mb-0" th:text="|Còn phải trả nhà cung cấp: ${#numbers.formatDecimal(s.payable,1,'POINT',2,'COMMA')} đ|"></p>
+  </div>
   <p th:if="${#lists.isEmpty(debts)}">Chưa có phiếu nhập hoặc xuất bán.</p>
   <div class="card card-body mb-2" th:each="d : ${debts}">
-    <strong th:text="|${d.type == 'sale' ? 'Thu khách' : 'Trả NCC'} · phiếu #${d.id} · ${d.partner}|"></strong>
+    <strong th:text="|${d.type == 'sale' ? 'Khách hàng' : 'Nhà cung cấp'}: ${d.partner}|"></strong>
+    <span th:text="|${d.type == 'sale' ? 'Phiếu xuất bán' : 'Phiếu nhập hàng'} #${d.id}|"></span>
+    <span th:text="|Tổng tiền phiếu: ${#numbers.formatDecimal(d.total_amount,1,'POINT',2,'COMMA')} đ|"></span>
+    <span th:text="|${d.type == 'sale' ? 'Đã thu' : 'Đã trả'}: ${#numbers.formatDecimal(d.paid_amount,1,'POINT',2,'COMMA')} đ|"></span>
     <span th:text="|Còn nợ: ${#numbers.formatDecimal(d.remaining,1,'POINT',2,'COMMA')} đ|"></span>
+    <small th:if="${d.remaining.signum() == 0}">Đã thanh toán đủ</small>
     <form th:if="${d.remaining.signum() > 0}" class="mt-2" method="post" th:action="@{/capital/pay}">
       <input type="hidden" name="type" th:value="${d.type}"><input type="hidden" name="id" th:value="${d.id}">
       <input type="hidden" name="requestKey" th:value="${d.request_key}">
@@ -34,9 +50,25 @@
       <button class="btn btn-primary w-100" th:text="${d.type == 'sale' ? 'Ghi thu tiền' : 'Ghi trả tiền'}"></button>
     </form>
   </div>
-  <h2 class="h5 mt-3">Lịch sử thu / trả</h2>
+  </section>
+  <section th:if="${section == 'receipts' or section == 'payments'}">
+  <h2 class="h5" th:classappend="${section == 'receipts' ? 'text-success' : 'text-danger'}" th:text="${section == 'receipts' ? 'Lịch sử thu khách' : 'Lịch sử trả nhà cung cấp'}"></h2>
+  <form class="card card-body mb-3" method="get" th:action="@{/capital}">
+    <input type="hidden" name="section" th:value="${section}">
+    <div class="row g-2">
+      <div class="col-6"><label class="form-label" for="history-from">Từ ngày</label><input class="form-control" id="history-from" type="date" name="from" th:value="${from}"></div>
+      <div class="col-6"><label class="form-label" for="history-to">Đến ngày</label><input class="form-control" id="history-to" type="date" name="to" th:value="${to}"></div>
+      <div class="col-12"><label class="form-label" for="history-partner" th:text="${section == 'receipts' ? 'Tên khách hàng' : 'Tên nhà cung cấp'}"></label><input class="form-control" id="history-partner" name="partner" th:value="${partner}" placeholder="Nhập một phần hoặc toàn bộ tên"></div>
+      <div class="col-6"><button class="btn btn-primary w-100" type="submit">Lọc lịch sử</button></div>
+      <div class="col-6"><a class="btn btn-outline-secondary w-100" th:href="@{/capital(section=${section})}">Xóa bộ lọc</a></div>
+    </div>
+    <small class="mt-2 text-muted">Lọc theo ngày ghi thu / trả, gồm cả ngày bắt đầu và kết thúc. Để trống ngày để xem toàn bộ thời gian. Tên không phân biệt chữ hoa, chữ thường.</small>
+  </form>
+  <p th:if="${#lists.isEmpty(payments) and error == null}">Không có khoản thu / trả phù hợp.</p>
   <div class="card card-body mb-2" th:each="p : ${payments}">
-    <strong th:text="|${p.outbound_id != null ? 'Thu khách · phiếu xuất #' + p.outbound_id : 'Trả NCC · phiếu nhập #' + p.purchase_id}: ${#numbers.formatDecimal(p.amount,1,'POINT',2,'COMMA')} đ|"></strong>
+    <span th:text="|${p.outbound_id != null ? 'Khách hàng' : 'Nhà cung cấp'}: ${p.partner}|"></span>
+    <strong th:classappend="${p.outbound_id != null ? 'text-success' : 'text-danger'}" th:text="|${p.outbound_id != null ? 'Thu khách · phiếu xuất #' + p.outbound_id : 'Trả NCC · phiếu nhập #' + p.purchase_id}: ${#numbers.formatDecimal(p.amount,1,'POINT',2,'COMMA')} đ|"></strong>
     <span th:text="${p.created_at}"></span><span th:text="${p.note}"></span>
   </div>
+  </section>
 </main><nav th:replace="~{fragments :: nav}"></nav></body></html>

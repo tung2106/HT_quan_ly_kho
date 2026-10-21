@@ -52,3 +52,5 @@ Java 17, Spring Boot 3.3, Spring Data JPA, PostgreSQL, Flyway, Thymeleaf + Boots
 - Đã bổ sung: đăng nhập, quản lý cấp/khóa/đặt lại mật khẩu; OWNER toàn quyền,
   STAFF chỉ xem tồn/giá bán và tạo/xem phiếu bán của mình; CSRF và kiểm tra quyền máy chủ.
   Quản lý thêm/sửa/xóa danh mục (chặn xóa khi còn sản phẩm); nút quay lại; phiếu nhập một dòng.
+- Nhà cung cấp: quản lý xóa khỏi danh sách bằng cách ngừng sử dụng; không cho chọn khi nhập mới,
+  vẫn giữ tên trên phiếu cũ, công nợ và cho phép trả nợ tiếp.
