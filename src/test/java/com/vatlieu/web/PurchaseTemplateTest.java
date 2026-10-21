@@ -17,10 +17,12 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@org.springframework.security.test.context.support.WithMockUser(roles="OWNER")
 @WebMvcTest(PurchaseController.class)
 class PurchaseTemplateTest {
     @Autowired MockMvc mvc;
     @MockBean PurchaseService service;
+    @MockBean com.vatlieu.service.UnitOptionsService units;
     @MockBean ProductRepository productRepo;
     @MockBean SupplierRepository supplierRepo;
     @MockBean PurchaseOrderRepository orderRepo;

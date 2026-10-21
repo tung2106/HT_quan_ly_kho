@@ -33,8 +33,11 @@
         <div class="row g-2">
           <div class="col-4"><input class="form-control" type="number" step="any" min="0" placeholder="Số lượng"
                  th:name="|items[${s.index}].qty|" th:value="${it.qty}"></div>
-          <div class="col-3"><input class="form-control" placeholder="Đơn vị" title="Để trống = đơn vị gốc"
-                 th:name="|items[${s.index}].unit|" th:value="${it.unit}"></div>
+          <div class="col-3"><select class="form-select unit-select" aria-label="Đơn vị" th:name="|items[${s.index}].unit|">
+            <option value="">Chọn đơn vị</option>
+            <option th:each="u : ${unitOptions}" th:value="${u.unit}" th:text="${u.label}" th:attr="data-product-id=${u.productId}"
+                    th:selected="${it.productId == u.productId and it.unit == u.unit}"></option>
+          </select></div>
           <div class="col-5"><input class="form-control" type="number" step="any" min="0" placeholder="Đơn giá / đơn vị"
                  th:name="|items[${s.index}].unitPrice|" th:value="${it.unitPrice}"></div>
         </div>

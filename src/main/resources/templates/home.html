@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Trang chủ')}"></head>
+<body><main class="container py-3 home-page">
+  <header class="home-welcome">
+    <div><span class="home-eyebrow">CỬA HÀNG CỦA GIA ĐÌNH</span>
+      <h1>Hôm nay mình<br>quản lý gì nhỉ?</h1>
+      <p>Hàng hóa rõ ràng, thu chi dễ theo dõi.</p></div>
+    <img th:src="@{/images/loading-cat.png}" alt="Mèo may mắn" width="100" height="145">
+  </header>
+  <h2 class="h5 mt-3 mb-3">Thao tác thường dùng</h2>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-outline-primary" th:href="@{/account/password}" th:text="|${loginName} · Đổi mật khẩu|"></a>
+    <a th:if="${isOwner}" class="btn btn-outline-primary" th:href="@{/admin/users}">Quản lý tài khoản</a>
+    <form method="post" th:action="@{/logout}"><button class="btn btn-outline-secondary">Đăng xuất</button></form>
+  </div>
+  <div class="home-grid">
+    <a class="home-tile" th:href="@{/stock}"><span class="home-icon">📦</span><strong>Tồn kho</strong><span>Xem lượng hàng trong kho</span></a>
+    <a class="home-tile" th:if="${isOwner}" th:href="@{/purchases/new}"><span class="home-icon">🚚</span><strong>Nhập hàng</strong><span>Ghi hàng về và tiền đã trả</span></a>
+    <a class="home-tile" th:href="@{/outbound/new}"><span class="home-icon">↗</span><strong>Xuất bán</strong><span>Ghi hàng bán và tiền đã thu</span></a>
+    <a class="home-tile" th:if="${isOwner}" th:href="@{/outbound/new(kind='WASTE')}"><span class="home-icon">🍂</span><strong>Hao hụt</strong><span>Ghi hàng hỏng hoặc thiếu</span></a>
+    <a class="home-tile home-wide" th:if="${isOwner}" th:href="@{/capital}"><span class="home-icon">₫</span><strong>Vốn &amp; công nợ</strong><span>Xem vốn tồn, ghi thu khách và trả nhà cung cấp</span></a>
+  </div>
+  <h2 class="h5 mt-4 mb-3">Danh mục &amp; lịch sử</h2>
+  <div class="home-grid">
+    <a class="home-tile" th:href="@{/products}"><span class="home-icon">🏷️</span><strong>Sản phẩm</strong><span>Giá bán, đơn vị và quy đổi</span></a>
+    <a class="home-tile" th:if="${isOwner}" th:href="@{/categories}"><span class="home-icon">🗂️</span><strong>Danh mục</strong><span>Phân nhóm các mặt hàng</span></a>
+    <a class="home-tile" th:if="${isOwner}" th:href="@{/suppliers}"><span class="home-icon">🤝</span><strong>Nhà cung cấp</strong><span>Thông tin người giao hàng</span></a>
+    <a class="home-tile" th:if="${isOwner}" th:href="@{/purchases}"><span class="home-icon">📋</span><strong>Phiếu nhập</strong><span>Xem lại các lần nhập hàng</span></a>
+    <a class="home-tile home-wide" th:href="@{/outbound}"><span class="home-icon">🧾</span><strong th:text="${isOwner ? 'Phiếu xuất & hao hụt' : 'Phiếu bán của tôi'}"></strong><span>Xem lại các phiếu được phép truy cập</span></a>
+  </div>
+</main><nav th:replace="~{fragments :: nav}"></nav></body></html>

@@ -13,6 +13,10 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * Nhập hàng:
@@ -30,29 +34,36 @@ public class PurchaseService {
     private final PurchaseOrderRepository orderRepo;
     private final BatchRepository batchRepo;
     private final StockTransactionRepository txRepo;
+    private final JdbcTemplate jdbc;
 
     private record Line(Product product, BigDecimal baseQty, BigDecimal baseCost, BigDecimal value) {}
 
     @Transactional
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('OWNER')")
     public PurchaseOrder create(PurchaseForm f) {
         List<PurchaseItemForm> rows = f.getItems().stream()
-                .filter(i -> i.getProductId() != null && i.getQty() != null && i.getQty().signum() > 0)
+                .filter(i -> i.getProductId() != null || i.getQty() != null || i.getUnitPrice() != null)
                 .toList();
         if (rows.isEmpty()) {
             throw new IllegalArgumentException("Cần ít nhất một dòng hàng có số lượng > 0");
         }
 
         List<Line> lines = new ArrayList<>();
+        Map<Long, Product> locked = new HashMap<>();
+        for (Long id : rows.stream().map(PurchaseItemForm::getProductId).filter(java.util.Objects::nonNull).distinct().sorted().toList()) {
+            locked.put(id, productRepo.findLockedById(id).orElseThrow(() -> new IllegalArgumentException("Sản phẩm không tồn tại")));
+        }
         for (PurchaseItemForm r : rows) {
-            Product p = productRepo.findById(r.getProductId())
-                    .orElseThrow(() -> new IllegalArgumentException("Sản phẩm không tồn tại"));
+            Product p = locked.get(r.getProductId());
+            if (p == null || !p.isActive()) throw new IllegalArgumentException("Hãy chọn sản phẩm đang sử dụng");
             if (r.getUnitPrice() == null || r.getUnitPrice().signum() < 0) {
                 throw new IllegalArgumentException("Thiếu đơn giá cho: " + p.getName());
             }
             BigDecimal factor = factorOf(p, r.getUnit());
-            BigDecimal baseQty = r.getQty().multiply(factor);
+            BigDecimal baseQty = InventoryMath.quantity(r.getQty(), factor);
+            InventoryMath.price(r.getUnitPrice());
             BigDecimal baseCost = r.getUnitPrice().divide(factor, 4, RoundingMode.HALF_UP);
-            lines.add(new Line(p, baseQty, baseCost, baseQty.multiply(baseCost)));
+            lines.add(new Line(p, baseQty, baseCost, r.getQty().multiply(r.getUnitPrice())));
         }
 
         PurchaseOrder order = new PurchaseOrder();
@@ -66,6 +77,9 @@ public class PurchaseService {
 
         BigDecimal shipping = order.getShippingCost();
         BigDecimal totalValue = lines.stream().map(Line::value).reduce(BigDecimal.ZERO, BigDecimal::add);
+        InventoryMath.price(shipping);
+        order.setTotalAmount(InventoryMath.total(List.of(totalValue, shipping)));
+        InventoryMath.payment(order.getPaidAmount(), order.getTotalAmount());
         List<BigDecimal> landedCosts = new ArrayList<>();
 
         for (Line l : lines) {
@@ -85,6 +99,10 @@ public class PurchaseService {
             order.getItems().add(item);
         }
         orderRepo.save(order);
+        if (order.getPaidAmount().signum() > 0) {
+            jdbc.update("INSERT INTO cash_payment(purchase_id,amount,note,request_key) VALUES (?,?,?,?)",
+                    order.getId(),order.getPaidAmount(),"Trả lúc nhập hàng",UUID.randomUUID());
+        }
 
         for (int i = 0; i < lines.size(); i++) {
             Line l = lines.get(i);
@@ -94,6 +112,7 @@ public class PurchaseService {
             // Tồn trước khi nhập dòng này (để tính bình quân gia quyền)
             BigDecimal onHand = txRepo.sumQty(p.getId());
             BigDecimal base = (onHand == null ? BigDecimal.ZERO : onHand).max(BigDecimal.ZERO);
+            BigDecimal oldValue = nz(batchRepo.remainingValue(p.getId()));
 
             Batch b = new Batch();
             b.setProduct(p);
@@ -114,7 +133,7 @@ public class PurchaseService {
             tx.setNote("Nhập hàng #" + order.getId());
             txRepo.save(tx);
 
-            BigDecimal newAvg = base.multiply(p.getAvgCost())
+            BigDecimal newAvg = oldValue
                     .add(l.baseQty().multiply(landed))
                     .divide(base.add(l.baseQty()), 2, RoundingMode.HALF_UP);
             p.setAvgCost(newAvg);

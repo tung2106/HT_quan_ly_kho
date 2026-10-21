@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Xuất kho')}"></head>
+<body><main class="container py-3">
+  <h1 class="h5">Xuất kho nội bộ</h1>
+  <div th:replace="~{fragments :: alerts}"></div>
+  <div class="d-flex gap-2 mb-3"><a class="btn btn-primary flex-fill" th:href="@{/outbound/new}">+ Xuất bán</a>
+    <a th:if="${isOwner}" class="btn btn-outline-danger flex-fill" th:href="@{/outbound/new(kind='WASTE')}">+ Hao hụt</a></div>
+  <p th:if="${#lists.isEmpty(orders)}">Chưa có phiếu xuất.</p>
+  <a class="card card-body mb-2 text-decoration-none" th:each="o : ${orders}" th:href="@{/outbound/{id}(id=${o.id})}">
+    <strong th:text="|#${o.id} — ${o.kind == 'SALE' ? 'Xuất bán' : 'Hao hụt'}|"></strong>
+    <span th:text="${o.created_at}"></span><span th:text="${o.customer}"></span>
+    <span th:if="${o.kind == 'SALE'}" th:text="|Tiền bán: ${#numbers.formatDecimal(o.total_amount,1,'POINT',0,'COMMA')} đ|"></span>
+    <span th:if="${o.kind == 'WASTE'}" th:text="|Giá vốn hao hụt: ${#numbers.formatDecimal(o.cost_amount,1,'POINT',2,'COMMA')} đ|"></span>
+  </a>
+</main><nav th:replace="~{fragments :: nav}"></nav></body></html>

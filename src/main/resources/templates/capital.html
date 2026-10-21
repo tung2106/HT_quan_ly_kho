@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Vốn và công nợ')}"></head>
+<body><main class="container py-3" th:with="s=${summary}">
+  <h1 class="h5">Vốn và công nợ</h1><div th:replace="~{fragments :: alerts}"></div>
+  <p class="small text-muted">Lũy kế toàn bộ dữ liệu đã ghi. Giá trị vốn tính từ các lô còn tồn.</p>
+  <div class="card card-body mb-3">
+    <p th:text="|Vốn trong kho: ${#numbers.formatDecimal(s.inventory,1,'POINT',2,'COMMA')} đ|"></p>
+    <p th:text="|Doanh thu: ${#numbers.formatDecimal(s.revenue,1,'POINT',0,'COMMA')} đ|"></p>
+    <p th:text="|Giá vốn đã bán: ${#numbers.formatDecimal(s.sold_cost,1,'POINT',2,'COMMA')} đ|"></p>
+    <p th:text="|Hao hụt theo giá vốn: ${#numbers.formatDecimal(s.waste,1,'POINT',2,'COMMA')} đ|"></p>
+    <p th:text="|Lãi gộp sau hao hụt: ${#numbers.formatDecimal(s.revenue.subtract(s.sold_cost).subtract(s.waste),1,'POINT',2,'COMMA')} đ|"></p>
+    <small>Chưa trừ chi phí hoạt động khác; không phải lợi nhuận ròng.</small>
+  </div>
+  <div class="card card-body mb-3">
+    <p th:text="|Đã thu khách: ${#numbers.formatDecimal(s.receipts,1,'POINT',0,'COMMA')} đ|"></p>
+    <p th:text="|Đã trả nhập hàng: ${#numbers.formatDecimal(s.payments,1,'POINT',2,'COMMA')} đ|"></p>
+    <p th:text="|Chênh lệch thu − trả: ${#numbers.formatDecimal(s.receipts.subtract(s.payments),1,'POINT',2,'COMMA')} đ|"></p>
+    <small>Chưa tính tiền đầu kỳ, vốn góp/rút và chi phí khác; không phải số dư tiền mặt.</small>
+    <p class="mt-2" th:text="|Khách còn nợ: ${#numbers.formatDecimal(s.receivable,1,'POINT',0,'COMMA')} đ|"></p>
+    <p th:text="|Còn phải trả NCC: ${#numbers.formatDecimal(s.payable,1,'POINT',2,'COMMA')} đ|"></p>
+  </div>
+  <h2 class="h5">Công nợ theo phiếu</h2>
+  <p th:if="${#lists.isEmpty(debts)}">Chưa có phiếu nhập hoặc xuất bán.</p>
+  <div class="card card-body mb-2" th:each="d : ${debts}">
+    <strong th:text="|${d.type == 'sale' ? 'Thu khách' : 'Trả NCC'} · phiếu #${d.id} · ${d.partner}|"></strong>
+    <span th:text="|Còn nợ: ${#numbers.formatDecimal(d.remaining,1,'POINT',2,'COMMA')} đ|"></span>
+    <form th:if="${d.remaining.signum() > 0}" class="mt-2" method="post" th:action="@{/capital/pay}">
+      <input type="hidden" name="type" th:value="${d.type}"><input type="hidden" name="id" th:value="${d.id}">
+      <input type="hidden" name="requestKey" th:value="${d.request_key}">
+      <label class="form-label">Số tiền thanh toán thêm (đ)</label>
+      <input class="form-control mb-2" name="amount" type="number" min="1" step="1" th:max="${d.remaining}" required>
+      <input class="form-control mb-2" name="note" placeholder="Ghi chú lần thanh toán">
+      <button class="btn btn-primary w-100" th:text="${d.type == 'sale' ? 'Ghi thu tiền' : 'Ghi trả tiền'}"></button>
+    </form>
+  </div>
+  <h2 class="h5 mt-3">Lịch sử thu / trả</h2>
+  <div class="card card-body mb-2" th:each="p : ${payments}">
+    <strong th:text="|${p.outbound_id != null ? 'Thu khách · phiếu xuất #' + p.outbound_id : 'Trả NCC · phiếu nhập #' + p.purchase_id}: ${#numbers.formatDecimal(p.amount,1,'POINT',2,'COMMA')} đ|"></strong>
+    <span th:text="${p.created_at}"></span><span th:text="${p.note}"></span>
+  </div>
+</main><nav th:replace="~{fragments :: nav}"></nav></body></html>

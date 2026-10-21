@@ -42,6 +42,13 @@ Java 17, Spring Boot 3.3, Spring Data JPA, PostgreSQL, Flyway, Thymeleaf + Boots
   và những gì CHƯA làm.
 
 ## Phạm vi hiện tại (cập nhật khi xong từng bước)
-- Đã có (Bước 1): danh mục, sản phẩm, quy đổi đơn vị, nhà cung cấp, nhập hàng, tồn kho.
-- Chưa có: bán hàng, giá sỉ theo bậc, hao hụt/kiểm kê, công nợ, báo cáo lợi nhuận,
-  đăng nhập/phân quyền, gợi ý giải pháp, triển khai.
+- Đã có (Bước 2): danh mục, sản phẩm, quy đổi đơn vị, nhà cung cấp, nhập hàng, tồn kho;
+  xuất bán nội bộ, hao hụt FIFO, công nợ theo phiếu và lịch sử thu/trả,
+  tổng hợp vốn tồn, doanh thu, giá vốn, hao hụt và chênh lệch thu/trả.
+- Quy ước đã chốt: cộng tất cả dòng rồi làm tròn tổng đến 1 đồng (HALF_UP),
+  số lượng gốc tối đa 3 số lẻ; sau xuất tính lại giá vốn bình quân từ các lô còn lại.
+- Chưa có: giá sỉ theo bậc, kiểm kê điều chỉnh, sửa/hủy/hoàn phiếu, báo cáo theo kỳ,
+  quỹ đầu kỳ/vốn góp/rút/chi phí khác, gợi ý giải pháp, triển khai.
+- Đã bổ sung: đăng nhập, quản lý cấp/khóa/đặt lại mật khẩu; OWNER toàn quyền,
+  STAFF chỉ xem tồn/giá bán và tạo/xem phiếu bán của mình; CSRF và kiểm tra quyền máy chủ.
+  Quản lý thêm/sửa/xóa danh mục (chặn xóa khi còn sản phẩm); nút quay lại; phiếu nhập một dòng.

@@ -14,9 +14,19 @@
     <button class="btn btn-primary">Thêm</button>
   </form>
   <ul class="list-group">
-    <li class="list-group-item d-flex justify-content-between" th:each="c : ${categories}">
+    <li class="list-group-item" th:each="c : ${categories}">
       <span th:text="${c.name}"></span>
       <span class="badge bg-warning text-dark" th:if="${c.perishable}">Dễ hư</span>
+      <details class="mt-2"><summary class="btn btn-outline-primary">Sửa danh mục</summary>
+        <form method="post" th:action="@{/categories/{id}/edit(id=${c.id})}" class="mt-2">
+          <label class="form-label">Tên danh mục</label><input class="form-control mb-2" name="name" th:value="${c.name}" maxlength="100" required>
+          <label class="mb-2"><input type="checkbox" name="perishable" value="true" th:checked="${c.perishable}"> Hàng dễ hư</label>
+          <button class="btn btn-primary w-100">Lưu thay đổi</button>
+        </form>
+      </details>
+      <form class="mt-2" method="post" th:action="@{/categories/{id}/delete(id=${c.id})}" onsubmit="return confirm('Xóa danh mục này? Danh mục có sản phẩm sẽ được giữ lại.');">
+        <button class="btn btn-outline-danger">Xóa danh mục</button>
+      </form>
     </li>
   </ul>
 </div>

@@ -1,0 +1,12 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Đăng nhập')}"></head>
+<body><main class="container py-4" style="max-width:460px">
+<div class="card card-body"><h1 class="h4">Đăng nhập cửa hàng</h1><p>Tài khoản do người quản lý cấp.</p>
+<p class="alert alert-danger" th:if="${param.error}">Tên đăng nhập hoặc mật khẩu chưa đúng, hoặc tài khoản đã bị khóa.</p>
+<p class="alert alert-info" th:if="${param.expired}">Phiên đăng nhập đã hết hiệu lực. Vui lòng đăng nhập lại.</p>
+<p class="alert alert-success" th:if="${param.changed}">Đã đổi mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</p>
+<p class="alert alert-success" th:if="${param.logout}">Đã đăng xuất.</p>
+<form method="post" th:action="@{/login}">
+<label for="username" class="form-label">Tên đăng nhập</label><input id="username" name="username" class="form-control mb-3" autocomplete="username" required autofocus>
+<label for="password" class="form-label">Mật khẩu</label><input id="password" name="password" type="password" class="form-control mb-3" autocomplete="current-password" required>
+<button class="btn btn-primary w-100">Đăng nhập</button></form></div></main></body></html>

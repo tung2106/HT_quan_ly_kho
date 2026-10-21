@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Ghi xuất kho')}"></head>
+<body><main class="container py-3">
+  <h1 class="h5" th:text="${form.kind == 'SALE' ? 'Ghi xuất bán' : 'Ghi hao hụt'}"></h1>
+  <div th:replace="~{fragments :: alerts}"></div>
+  <p class="small text-muted">Chọn sản phẩm rồi chọn đơn vị đã khai báo. Số lượng sau quy đổi tối đa 3 số lẻ.</p>
+  <form method="post" th:action="@{/outbound}">
+    <input type="hidden" name="kind" th:value="${form.kind}">
+    <input type="hidden" name="requestKey" th:value="${form.requestKey}">
+    <div th:if="${form.kind == 'SALE'}" class="mb-3">
+      <label for="customer" class="form-label">Tên / thông tin liên hệ khách (bắt buộc khi còn nợ)</label>
+      <input id="customer" name="customer" class="form-control" maxlength="200" th:value="${form.customer}">
+    </div>
+    <div id="rows">
+      <div class="card card-body mb-2 row-item" th:each="it,s : ${form.items}">
+        <label class="form-label">Sản phẩm</label>
+        <select class="form-select mb-2" th:name="|items[${s.index}].productId|">
+          <option value="">-- Chọn sản phẩm --</option>
+          <option th:each="p : ${products}" th:value="${p.id}" th:text="|${p.name} (${p.baseUnit})|" th:selected="${it.productId == p.id}"></option>
+        </select>
+        <label class="form-label">Số lượng</label>
+        <input class="form-control mb-2" type="number" min="0" step="any" th:name="|items[${s.index}].qty|" th:value="${it.qty}">
+        <label class="form-label">Đơn vị</label>
+        <select class="form-select mb-2 unit-select" aria-label="Đơn vị" th:name="|items[${s.index}].unit|">
+          <option value="">Chọn đơn vị</option>
+          <option th:each="u : ${unitOptions}" th:value="${u.unit}" th:text="${u.label}" th:attr="data-product-id=${u.productId}"
+                  th:selected="${it.productId == u.productId and it.unit == u.unit}"></option>
+        </select>
+        <label th:if="${form.kind == 'SALE'}" class="form-label">Giá bán thực tế / đơn vị đã nhập (đ)</label>
+        <input th:if="${form.kind == 'SALE'}" class="form-control" type="number" min="0" step="0.01" th:name="|items[${s.index}].unitPrice|" th:value="${it.unitPrice}">
+        <button type="button" class="btn btn-outline-secondary mt-2" onclick="removeRow(this)">Xóa dòng</button>
+      </div>
+    </div>
+    <button type="button" class="btn btn-outline-primary w-100 mb-3" onclick="addRow()">+ Thêm sản phẩm</button>
+    <div th:if="${form.kind == 'SALE'}" class="mb-3">
+      <label for="paid" class="form-label">Tiền đã thu (đ); để 0 nếu chưa thu</label>
+      <input id="paid" class="form-control" name="paidAmount" type="number" step="1" min="0" th:value="${form.paidAmount}">
+      <small>Tổng tiền được cộng tất cả dòng rồi làm tròn đến 1 đồng.</small>
+    </div>
+    <label for="note" class="form-label" th:text="${form.kind == 'WASTE' ? 'Lý do hao hụt (bắt buộc)' : 'Ghi chú'}"></label>
+    <textarea id="note" class="form-control mb-3" name="note" th:required="${form.kind == 'WASTE'}" th:text="${form.note}"></textarea>
+    <button class="btn btn-primary w-100">Lưu và trừ kho</button>
+    <a class="btn btn-link w-100" th:href="@{/outbound}">Quay lại</a>
+  </form>
+</main>
+<script>
+  function renumber() {
+    document.querySelectorAll('.row-item').forEach((row,index) => row.querySelectorAll('[name]').forEach(field => {
+      field.name = field.name.replace(/\[\d+\]/, `[${index}]`);
+    }));
+  }
+  function addRow() {
+    if (document.querySelectorAll('.row-item').length >= 100) return;
+    const row = document.querySelector('.row-item').cloneNode(true);
+    row.querySelectorAll('input,select').forEach(field => { field.value = ''; });
+    document.getElementById('rows').appendChild(row); renumber();
+  }
+  function removeRow(button) {
+    if (document.querySelectorAll('.row-item').length > 1) button.closest('.row-item').remove();
+    else button.closest('.row-item').querySelectorAll('input,select').forEach(field => { field.value = ''; });
+    renumber();
+  }
+</script><nav th:replace="~{fragments :: nav}"></nav></body></html>

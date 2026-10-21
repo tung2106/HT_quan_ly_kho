@@ -26,6 +26,7 @@ class PurchaseServiceTest {
     @Mock PurchaseOrderRepository orderRepo;
     @Mock BatchRepository batchRepo;
     @Mock StockTransactionRepository txRepo;
+    @Mock org.springframework.jdbc.core.JdbcTemplate jdbc;
     @InjectMocks PurchaseService service;
 
     private Product product;
@@ -47,7 +48,7 @@ class PurchaseServiceTest {
     }
 
     private void mockProductAndConversion() {
-        when(productRepo.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepo.findLockedById(1L)).thenReturn(Optional.of(product));
         UnitConversion conversion = new UnitConversion();
         conversion.setFactor(new BigDecimal("50"));
         when(convRepo.findByProductIdAndUnitNameIgnoreCase(1L, "bao"))
@@ -80,7 +81,7 @@ class PurchaseServiceTest {
         assertThat(tx.getValue().getTxType()).isEqualTo(StockTransaction.PURCHASE);
         assertThat(tx.getValue().getBatch()).isSameAs(batch.getValue());
         assertThat(new StockService.StockRow(1L, product.getName(), "kg",
-                new BigDecimal("1000"), BigDecimal.ZERO, false, product.getAvgCost()).value())
+                new BigDecimal("1000"), BigDecimal.ZERO, false, product.getAvgCost(), new BigDecimal("1800000")).value())
                 .isEqualByComparingTo("1800000");
     }
 
@@ -88,6 +89,7 @@ class PurchaseServiceTest {
     void giaVonBinhQuanTinhCaTonCuVaCuocVanChuyen() {
         mockProductAndConversion();
         when(txRepo.sumQty(1L)).thenReturn(new BigDecimal("500"));
+        when(batchRepo.remainingValue(1L)).thenReturn(new BigDecimal("750000"));
         product.setAvgCost(new BigDecimal("1500"));
         form.setShippingCost(new BigDecimal("100000"));
 
@@ -102,7 +104,7 @@ class PurchaseServiceTest {
 
     @Test
     void donViChuaKhaiBaoKhongGhiDonHayKho() {
-        when(productRepo.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepo.findLockedById(1L)).thenReturn(Optional.of(product));
         when(convRepo.findByProductIdAndUnitNameIgnoreCase(1L, "bao"))
                 .thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.create(form))
@@ -112,9 +114,19 @@ class PurchaseServiceTest {
 
     @Test
     void donGiaAmKhongGhiDonHayKho() {
-        when(productRepo.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepo.findLockedById(1L)).thenReturn(Optional.of(product));
         form.getItems().get(0).setUnitPrice(new BigDecimal("-1"));
         assertThatThrownBy(() -> service.create(form)).isInstanceOf(IllegalArgumentException.class);
         verifyNoInteractions(orderRepo, batchRepo, txRepo);
+    }
+
+    @Test
+    void tongNhapLamTronSauKhiCongVaLuuTienDaTra() {
+        when(productRepo.findLockedById(1L)).thenReturn(Optional.of(product));
+        var first=form.getItems().get(0); first.setQty(new BigDecimal("0.004"));first.setUnit("kg");first.setUnitPrice(new BigDecimal("100"));
+        var second=new PurchaseItemForm();second.setProductId(1L);second.setQty(new BigDecimal("0.004"));second.setUnit("kg");second.setUnitPrice(new BigDecimal("100"));
+        form.getItems().add(second);form.setPaidAmount(BigDecimal.ONE);
+        assertThat(service.create(form).getTotal()).isEqualByComparingTo("1");
+        verify(jdbc).update(anyString(),isNull(),eq(BigDecimal.ONE),eq("Trả lúc nhập hàng"),any(java.util.UUID.class));
     }
 }

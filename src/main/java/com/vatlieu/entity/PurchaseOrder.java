@@ -18,12 +18,14 @@ public class PurchaseOrder {
     private BigDecimal shippingCost = BigDecimal.ZERO;
     private BigDecimal paidAmount = BigDecimal.ZERO;
     private String note;
+    private BigDecimal totalAmount;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PurchaseItem> items = new ArrayList<>();
 
     /** Tổng tiền hàng + cước vận chuyển. */
     public BigDecimal getTotal() {
+        if (totalAmount != null) return totalAmount;
         return items.stream()
                 .map(i -> i.getQty().multiply(i.getUnitCost()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add)

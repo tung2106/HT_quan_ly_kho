@@ -9,6 +9,7 @@ import com.vatlieu.service.PurchaseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -19,6 +20,7 @@ import java.time.LocalDate;
 @RequestMapping("/purchases")
 public class PurchaseController {
     private final PurchaseService service;
+    private final com.vatlieu.service.UnitOptionsService units;
     private final ProductRepository productRepo;
     private final SupplierRepository supplierRepo;
     private final PurchaseOrderRepository orderRepo;
@@ -33,15 +35,16 @@ public class PurchaseController {
     public String form(Model m) {
         PurchaseForm f = new PurchaseForm();
         f.setOrderDate(LocalDate.now());
-        for (int i = 0; i < 3; i++) f.getItems().add(new PurchaseItemForm());
+        f.getItems().add(new PurchaseItemForm());
         m.addAttribute("form", f);
         populate(m);
         return "purchase-form";
     }
 
     @PostMapping
-    public String save(@ModelAttribute("form") PurchaseForm f, Model m, RedirectAttributes ra) {
+    public String save(@ModelAttribute("form") PurchaseForm f, BindingResult binding, Model m, RedirectAttributes ra) {
         try {
+            if (binding.hasErrors()) throw new IllegalArgumentException("Ngày, số lượng hoặc số tiền không hợp lệ");
             service.create(f);
             ra.addFlashAttribute("msg", "Đã lưu đơn nhập hàng");
             return "redirect:/purchases";
@@ -53,6 +56,7 @@ public class PurchaseController {
     }
 
     private void populate(Model m) {
+        m.addAttribute("unitOptions", units.findAll());
         m.addAttribute("products", productRepo.findByActiveTrueOrderByNameAsc());
         m.addAttribute("suppliers", supplierRepo.findAllByOrderByNameAsc());
     }
