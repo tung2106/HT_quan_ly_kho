@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Nhà cung cấp')}"></head>
+<body>
+<div class="container py-3">
+  <h5 class="mb-3">Nhà cung cấp</h5>
+  <div th:replace="~{fragments :: alerts}"></div>
+  <form method="post" th:action="@{/suppliers}" class="card card-body mb-3">
+    <input class="form-control mb-2" name="name" placeholder="Tên nhà cung cấp" required>
+    <input class="form-control mb-2" name="phone" placeholder="Số điện thoại" type="tel">
+    <button class="btn btn-primary">Thêm</button>
+  </form>
+  <ul class="list-group">
+    <li class="list-group-item d-flex justify-content-between" th:each="s : ${suppliers}">
+      <span th:text="${s.name}"></span><small class="text-muted" th:text="${s.phone}"></small>
+    </li>
+  </ul>
+</div>
+<nav th:replace="~{fragments :: nav}"></nav>
+</body>
+</html>

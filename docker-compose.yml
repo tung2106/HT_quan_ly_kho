@@ -1,0 +1,12 @@
+services:
+  db:
+    image: postgres:16
+    container_name: vatlieu-db
+    environment:
+      POSTGRES_DB: vatlieu
+      POSTGRES_USER: vatlieu
+      POSTGRES_PASSWORD: vatlieu123   # chỉ để dev, đổi khi triển khai thật
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+volumes:
+  pgdata:

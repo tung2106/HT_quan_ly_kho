@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Sản phẩm')}"></head>
+<body>
+<div class="container py-3">
+  <h5 class="mb-3" th:text="${form.id == null} ? 'Thêm sản phẩm' : 'Sửa sản phẩm'"></h5>
+  <div th:replace="~{fragments :: alerts}"></div>
+
+  <form method="post" th:action="@{/products}" th:object="${form}" class="card card-body mb-3">
+    <input type="hidden" th:field="*{id}">
+    <label class="form-label">Danh mục</label>
+    <select class="form-select mb-2" th:field="*{categoryId}" required>
+      <option value="">-- chọn --</option>
+      <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"></option>
+    </select>
+    <label class="form-label">Tên sản phẩm</label>
+    <input class="form-control mb-2" th:field="*{name}" required>
+    <label class="form-label">Mã (không bắt buộc)</label>
+    <input class="form-control mb-2" th:field="*{code}">
+    <label class="form-label">Đơn vị gốc (kho lưu theo đơn vị này: kg, viên, bao, m3...)</label>
+    <input class="form-control mb-2" th:field="*{baseUnit}" required>
+    <label class="form-label">Giá bán lẻ / đơn vị gốc</label>
+    <input class="form-control mb-2" type="number" step="any" min="0" th:field="*{retailPrice}">
+    <label class="form-label">Mức tồn tối thiểu (cảnh báo sắp hết)</label>
+    <input class="form-control mb-2" type="number" step="any" min="0" th:field="*{minStock}">
+    <label class="form-label">Ghi chú</label>
+    <input class="form-control mb-2" th:field="*{note}">
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" th:field="*{active}" id="active">
+      <label class="form-check-label" for="active">Đang kinh doanh</label>
+    </div>
+    <button class="btn btn-primary">Lưu</button>
+  </form>
+
+  <div class="card card-body" th:if="${form.id != null}">
+    <h6>Quy đổi đơn vị</h6>
+    <p class="small text-muted">Ví dụ: 1 bao = 50 (kg). Dùng khi nhập/bán theo đơn vị khác đơn vị gốc.</p>
+    <ul class="list-group mb-3">
+      <li class="list-group-item d-flex justify-content-between align-items-center" th:each="u : ${units}">
+        <span>1 <b th:text="${u.unitName}"></b> = <span th:text="${u.factor.stripTrailingZeros().toPlainString()}"></span> <span th:text="${product.baseUnit}"></span></span>
+        <form method="post" th:action="@{/products/{id}/units/{uid}/delete(id=${form.id},uid=${u.id})}">
+          <button class="btn btn-sm btn-outline-danger">Xóa</button>
+        </form>
+      </li>
+    </ul>
+    <form method="post" th:action="@{/products/{id}/units(id=${form.id})}" class="row g-2">
+      <div class="col-5"><input class="form-control" name="unitName" placeholder="Đơn vị (bao)" required></div>
+      <div class="col-4"><input class="form-control" name="factor" type="number" step="any" min="0" placeholder="= bao nhiêu" required></div>
+      <div class="col-3"><button class="btn btn-secondary w-100">Thêm</button></div>
+    </form>
+  </div>
+</div>
+<nav th:replace="~{fragments :: nav}"></nav>
+</body>
+</html>

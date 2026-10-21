@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Danh mục')}"></head>
+<body>
+<div class="container py-3">
+  <h5 class="mb-3">Danh mục</h5>
+  <div th:replace="~{fragments :: alerts}"></div>
+  <form method="post" th:action="@{/categories}" class="card card-body mb-3">
+    <input class="form-control mb-2" name="name" placeholder="Tên danh mục (vd: Xi măng, Sắn...)" required>
+    <div class="form-check mb-2">
+      <input class="form-check-input" type="checkbox" name="perishable" value="true" id="per">
+      <label class="form-check-label" for="per">Hàng dễ hư (nông sản)</label>
+    </div>
+    <button class="btn btn-primary">Thêm</button>
+  </form>
+  <ul class="list-group">
+    <li class="list-group-item d-flex justify-content-between" th:each="c : ${categories}">
+      <span th:text="${c.name}"></span>
+      <span class="badge bg-warning text-dark" th:if="${c.perishable}">Dễ hư</span>
+    </li>
+  </ul>
+</div>
+<nav th:replace="~{fragments :: nav}"></nav>
+</body>
+</html>

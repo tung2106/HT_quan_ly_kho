@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Tồn kho')}"></head>
+<body>
+<div class="container py-3">
+  <h5 class="mb-3">Tồn kho</h5>
+  <div th:replace="~{fragments :: alerts}"></div>
+  <div class="text-muted" th:if="${#lists.isEmpty(rows)}">Chưa có sản phẩm. Hãy thêm sản phẩm rồi nhập hàng.</div>
+  <div class="table-responsive" th:unless="${#lists.isEmpty(rows)}">
+    <table class="table table-sm align-middle">
+      <thead><tr><th>Sản phẩm</th><th class="text-end">Tồn</th><th class="text-end">Giá vốn</th><th class="text-end">Giá trị</th></tr></thead>
+      <tbody>
+        <tr th:each="r : ${rows}" th:classappend="${r.lowStock()} ? 'table-danger'">
+          <td><span th:text="${r.name()}"></span>
+              <span class="badge bg-danger" th:if="${r.lowStock()}">Sắp hết</span></td>
+          <td class="text-end text-nowrap"><span th:text="${r.qtyOnHand().stripTrailingZeros().toPlainString()}"></span> <small th:text="${r.baseUnit()}"></small></td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(r.avgCost(),1,'POINT',0,'COMMA')}"></td>
+          <td class="text-end" th:text="${#numbers.formatDecimal(r.value(),1,'POINT',0,'COMMA')}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<nav th:replace="~{fragments :: nav}"></nav>
+</body>
+</html>
