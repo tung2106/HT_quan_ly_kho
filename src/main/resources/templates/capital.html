@@ -2,14 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Vốn và công nợ')}"></head>
 <body><main class="container py-3" th:with="s=${summary}">
-  <h1 class="h5">Vốn và công nợ</h1><div th:replace="~{fragments :: alerts}"></div>
-  <nav class="row g-3 mb-4 capital-menu" aria-label="Các mục vốn và công nợ">
+  <a th:if="${section != 'menu'}" id="capital-menu-back" class="btn btn-outline-primary" th:href="@{/capital}">← Danh mục vốn và công nợ</a><h1 class="h5" th:text="${section == 'menu' ? 'Vốn và công nợ' : (section == 'capital' ? 'Xem vốn' : (section == 'debts' ? 'Công nợ' : (section == 'receipts' ? 'Lịch sử thu' : 'Lịch sử trả')))}">Vốn và công nợ</h1><div th:replace="~{fragments :: alerts}"></div>
+  <nav th:if="${section == 'menu'}" class="row g-3 mb-4 capital-menu" aria-label="Các mục vốn và công nợ">
     <div class="col-6 col-md-3"><a class="capital-menu-item capital-menu-blue" th:attr="aria-current=${section == 'capital' ? 'page' : null}" th:href="@{/capital(section='capital')}"><span class="capital-menu-icon" aria-hidden="true">▣</span><strong>Xem vốn</strong><span>Vốn tồn và kết quả bán</span><small th:if="${section == 'capital'}">Đang xem</small></a></div>
     <div class="col-6 col-md-3"><a class="capital-menu-item capital-menu-purple" th:attr="aria-current=${section == 'debts' ? 'page' : null}" th:href="@{/capital(section='debts')}"><span class="capital-menu-icon" aria-hidden="true">⇄</span><strong>Công nợ</strong><span>Thu khách · Trả nhà cung cấp</span><small th:if="${section == 'debts'}">Đang xem</small></a></div>
     <div class="col-6 col-md-3"><a class="capital-menu-item capital-menu-green" th:attr="aria-current=${section == 'receipts' ? 'page' : null}" th:href="@{/capital(section='receipts')}"><span class="capital-menu-icon" aria-hidden="true">↙</span><strong>Lịch sử thu</strong><span>Tiền đã thu từ khách</span><small th:if="${section == 'receipts'}">Đang xem</small></a></div>
     <div class="col-6 col-md-3"><a class="capital-menu-item capital-menu-red" th:attr="aria-current=${section == 'payments' ? 'page' : null}" th:href="@{/capital(section='payments')}"><span class="capital-menu-icon" aria-hidden="true">↗</span><strong>Lịch sử trả</strong><span>Tiền đã trả nhà cung cấp</span><small th:if="${section == 'payments'}">Đang xem</small></a></div>
   </nav>  <section th:if="${section == 'capital'}">
-  <h2 class="h5">Xem vốn</h2>
+
   <p class="small text-muted">Lũy kế toàn bộ dữ liệu đã ghi. Giá trị vốn tính từ các lô còn tồn.</p>
   <div class="card card-body mb-3">
     <p th:text="|Vốn trong kho: ${#numbers.formatDecimal(s.inventory,1,'POINT',0,'COMMA')} VNĐ|"></p>
@@ -27,7 +27,7 @@
   </div>
   </section>
   <section th:if="${section == 'debts'}">
-  <h2 class="h5">Công nợ theo phiếu</h2>
+
   <div class="d-flex gap-2 mb-3" role="tablist" aria-label="Loại công nợ">
     <button type="button" id="supplier-debts-tab" class="btn btn-danger flex-fill" role="tab" aria-controls="supplier-debts" aria-selected="true">Trả nợ nhà cung cấp</button>
     <button type="button" id="customer-debts-tab" class="btn btn-outline-success flex-fill" role="tab" aria-controls="customer-debts" aria-selected="false" tabindex="-1">Thu nợ khách hàng</button>
@@ -35,8 +35,6 @@
   <section class="mb-4" role="tabpanel" th:hidden="${debtType == 'sale'}" th:attr="aria-labelledby=${debtType == 'sale' ? 'customer-debts-tab' : 'supplier-debts-tab'}" th:each="debtType : ${ {'purchase','sale'} }"
            th:id="${debtType == 'sale' ? 'customer-debts' : 'supplier-debts'}"
            th:with="groupDebts=${debtType == 'sale' ? debts.?[type == 'sale' and remaining.signum() > 0] : debts.?[type == 'purchase' and remaining.signum() > 0]}">
-    <h3 class="h5" th:classappend="${debtType == 'sale' ? 'text-success' : 'text-danger'}"
-        th:text="${debtType == 'sale' ? 'Thu nợ khách hàng' : 'Trả nợ nhà cung cấp'}"></h3>
     <p class="fw-bold" th:classappend="${debtType == 'sale' ? 'text-success' : 'text-danger'}"
        th:text="|${debtType == 'sale' ? 'Tổng cần thu khách' : 'Tổng cần trả nhà cung cấp'}: ${#numbers.formatDecimal(debtType == 'sale' ? s.receivable : s.payable,1,'POINT',0,'COMMA')} VNĐ|"></p>
     <p th:if="${#lists.isEmpty(groupDebts)}" th:text="${debtType == 'sale' ? 'Không còn phiếu khách hàng nợ.' : 'Không còn phiếu nợ nhà cung cấp.'}"></p>
@@ -45,7 +43,7 @@
       <input type="search" class="form-control debt-search" th:id="|debt-search-${debtType}|" placeholder="Nhập tên, có dấu hoặc không dấu" autocomplete="off">
       <small class="text-muted">Tổng nợ phía trên là tổng của toàn bộ tab.</small>
       <p class="debt-search-empty mt-2 mb-0" role="status" hidden>Không tìm thấy phiếu còn nợ phù hợp.</p>
-    </div>  <div class="card card-body mb-2 debt-card" th:attr="data-partner=${d.partner}" th:each="d : ${groupDebts}">
+    </div>  <div class="card card-body mb-2 debt-card" tabindex="-1" th:id="|${d.type}-debt-${d.id}|" th:attr="data-partner=${d.partner}" th:each="d : ${groupDebts}">
     <strong th:text="|${d.type == 'sale' ? 'Khách hàng' : 'Nhà cung cấp'}: ${d.partner}|"></strong>
     <span th:text="|${d.type == 'sale' ? 'Phiếu xuất bán' : 'Phiếu nhập hàng'} #${d.id}|"></span>
     <span th:text="|Tổng tiền phiếu: ${#numbers.formatDecimal(d.total_amount,1,'POINT',0,'COMMA')} VNĐ|"></span>
@@ -58,13 +56,16 @@
       <label class="form-label" th:text="${d.type == 'sale' ? 'Số tiền thu thêm từ khách' : 'Số tiền trả thêm nhà cung cấp'}"></label>
       <input class="form-control mb-2" name="amount" type="number" min="1" step="1" th:max="${d.remaining}" required>
       <input class="form-control mb-2" name="note" placeholder="Ghi chú lần thanh toán">
-      <button class="btn w-100" th:classappend="${d.type == 'sale' ? 'btn-success' : 'btn-danger'}" th:text="${d.type == 'sale' ? 'Ghi thu tiền khách' : 'Ghi trả nợ nhà cung cấp'}"></button>
+      <button class="btn w-100" th:classappend="${d.type == 'sale' ? 'btn-success' : 'btn-danger'}" >Ghi tiền</button>
     </form>
-  </div>
+    <form class="mt-2" th:if="${d.remaining.signum() > 0}" method="post" th:action="@{/capital/pay}" onsubmit="return confirm('Xác nhận đã thực nhận/trả đủ toàn bộ số tiền còn nợ của phiếu này? Thao tác sẽ lưu vào lịch sử thu/trả.');">
+      <input type="hidden" name="type" th:value="${d.type}"><input type="hidden" name="id" th:value="${d.id}">
+      <input type="hidden" name="requestKey" th:value="${d.request_key}"><input type="hidden" name="settleAll" value="true">
+      <button class="btn w-100" th:classappend="${d.type == 'sale' ? 'btn-outline-success' : 'btn-outline-danger'}" th:text="|Tất toán ${#numbers.formatDecimal(d.remaining,1,'POINT',0,'COMMA')} VNĐ|"></button>
+    </form>  </div>
   </section>
   </section>
   <section th:if="${section == 'receipts' or section == 'payments'}">
-  <h2 class="h5" th:classappend="${section == 'receipts' ? 'text-success' : 'text-danger'}" th:text="${section == 'receipts' ? 'Lịch sử thu khách' : 'Lịch sử trả nhà cung cấp'}"></h2>
   <form class="card card-body mb-3" method="get" th:action="@{/capital}">
     <input type="hidden" name="section" th:value="${section}">
     <div class="row g-2">

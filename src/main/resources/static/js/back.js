@@ -29,10 +29,12 @@
   remember();
   window.addEventListener('pageshow',remember);
   if(location.pathname===home) return;
-  const toolbar=document.createElement('div');toolbar.className='container pt-3';
+  const toolbar=document.createElement('div');toolbar.className='container pt-3 d-flex gap-2 align-items-stretch';
   const button=document.createElement('button');button.type='button';button.className='btn btn-outline-primary';
-  button.textContent='← Quay lại';
+  const capitalPage = location.pathname === home + 'capital';
+  button.textContent = capitalPage ? '⌂ Trang chủ' : '← Quay lại';
   button.addEventListener('click',() => {
+    if (capitalPage) { location.assign(home); return; }
     remember();
     pages.pop();
     const previous=pages.at(-1)||home;
@@ -40,5 +42,12 @@
     // Mở trang bằng GET, không quay lại POST hoặc gửi lại thao tác vừa lưu.
     location.assign(previous);
   });
-  toolbar.appendChild(button);document.body.prepend(toolbar);
+  toolbar.appendChild(button);
+  const capitalMenu = document.getElementById('capital-menu-back');
+  if (capitalPage && capitalMenu) {
+    button.style.flexShrink = '0';
+    capitalMenu.style.minWidth = '0';
+    toolbar.appendChild(capitalMenu);
+  }
+  document.body.prepend(toolbar);
 })();

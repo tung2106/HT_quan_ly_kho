@@ -12,6 +12,7 @@ public class OutboundForm {
     private String kind = "SALE";
     private String customer;
     private String note;
+    private boolean settleAll;
     private BigDecimal paidAmount = BigDecimal.ZERO;
     private UUID requestKey = UUID.randomUUID();
     private List<PurchaseItemForm> items = new ArrayList<>();

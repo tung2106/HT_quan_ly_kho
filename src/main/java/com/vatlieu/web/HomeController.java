@@ -18,7 +18,7 @@ public class HomeController {
 
     @GetMapping("/stock/lots")
     public String lots(Model m) {
-        m.addAttribute("lots", stockService.lots(true));
+        m.addAttribute("productLots", stockService.lotsByProduct());
         return "stock-lots";
     }
     @GetMapping("/stock")

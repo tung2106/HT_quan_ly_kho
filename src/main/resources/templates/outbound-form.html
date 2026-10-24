@@ -43,6 +43,7 @@
     </div>
     <button type="button" class="btn btn-outline-primary w-100 mb-3" onclick="addRow()">+ Thêm sản phẩm</button>
     <div th:if="${form.kind == 'SALE'}" class="mb-3">
+<label class="form-check mt-2 mb-2"><input class="form-check-input settle-all" type="checkbox" name="settleAll" value="true" th:checked="${form.settleAll}"><span class="form-check-label">Tất toán — đã thu đủ tiền phiếu bán</span></label><small class="d-block mb-2">Khi lưu, hệ thống ghi đã thanh toán toàn bộ tổng tiền phiếu. Chỉ chọn khi đã thực nhận/trả đủ tiền.</small>
       <label for="paid" class="form-label">Số tiền khách hàng đã trả</label>
       <input id="paid" class="form-control" name="paidAmount" type="number" step="1" min="0" th:value="${form.paidAmount}">
       <small>Nhập số tiền thực nhận cho phiếu này; để 0 nếu khách chưa trả. Phần còn thiếu được ghi công nợ, cần có tên khách hàng. Tổng tiền hàng được cộng tất cả dòng rồi làm tròn đến 1 đồng.</small>
@@ -70,4 +71,4 @@
     else button.closest('.row-item').querySelectorAll('input,select').forEach(field => { field.value = ''; });
     renumber();
   }
-</script><script defer th:src="@{/js/batch-select.js}"></script><nav th:replace="~{fragments :: nav}"></nav></body></html>
+</script><script defer th:src="@{/js/batch-select.js}"></script><nav th:replace="~{fragments :: nav}"></nav><script defer th:src="@{/js/settlement.js}"></script></body></html>

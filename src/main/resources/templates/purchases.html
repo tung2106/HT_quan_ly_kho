@@ -14,6 +14,7 @@
         <strong th:text="${#temporals.format(o.orderDate,'dd/MM/yyyy')}"></strong>
         <span th:text="${o.supplier != null} ? ${o.supplier.name} : 'Không rõ NCC'"></span>
       </div>
+      <div class="small text-muted mb-2" th:text="|Phiếu nhập #${o.id}|"></div>
       <div class="small">
         <div class="mb-2" th:each="it : ${o.items}">
           <span th:text="${it.product.name} + ': ' + ${it.qty.stripTrailingZeros().toPlainString()} + ' ' + ${it.product.baseUnit}"></span>
@@ -28,6 +29,7 @@
         <span class="text-danger" th:if="${o.total.compareTo(o.paidAmount) > 0}"
               th:text="'Còn nợ ' + ${#numbers.formatDecimal(o.total.subtract(o.paidAmount),1,'POINT',0,'COMMA')} + ' VNĐ'"></span>
       </div>
+      <a class="btn btn-danger w-100 mt-2" th:if="${o.total.compareTo(o.paidAmount) > 0}" th:href="@{/capital(section='debts')} + '#purchase-debt-' + ${o.id}">Thanh toán</a>
     </div>
   </div>
 </div>

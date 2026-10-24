@@ -27,6 +27,34 @@ class OperationsPostgresTest {
     @Autowired ProductService productService;
     @Autowired StockService stockService;
 
+    @Test void tatToanPhieuMoiVaCongNoKhongGhiTrung() throws Exception {
+        long p=product();
+        var purchaseForm=new PurchaseForm();purchaseForm.getItems().add(row(p,"1.5","kg","101"));
+        purchaseForm.setShippingCost(n("10"));purchaseForm.setPaidAmount(n("999"));purchaseForm.setSettleAll(true);
+        long purchase=purchases.create(purchaseForm).getId();em.flush();em.clear();
+        decimal("SELECT paid_amount FROM purchase_order WHERE id=?",purchase,"162");
+        decimal("SELECT SUM(amount) FROM cash_payment WHERE purchase_id=?",purchase,"162");
+        var saleForm=sale(p,"1.5","101");saleForm.setSettleAll(true);saleForm.setCustomer(null);
+        long fullSale=service.create(saleForm);
+        decimal("SELECT paid_amount FROM outbound_order WHERE id=?",fullSale,"152");
+        decimal("SELECT SUM(amount) FROM cash_payment WHERE outbound_id=?",fullSale,"152");
+        assertThat(service.create(saleForm)).isEqualTo(fullSale);
+        long debtPurchase=receive(p,"10","100","200");
+        service.pay("purchase",debtPurchase,n("100"),UUID.randomUUID(),"Trả một phần");
+        UUID key=UUID.randomUUID();
+        service.pay("purchase",debtPurchase,null,key,"",true);
+        service.pay("purchase",debtPurchase,null,key,"",true);
+        service.pay("purchase",debtPurchase,null,UUID.randomUUID(),"",true);
+        decimal("SELECT SUM(amount) FROM cash_payment WHERE purchase_id=?",debtPurchase,"1000");
+        var partial=sale(p,"1","200");partial.setPaidAmount(n("50"));long debtSale=service.create(partial);
+        service.pay("sale",debtSale,n("50"),UUID.randomUUID(),"Thu thêm");
+        mvc.perform(post("/capital/pay").with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
+                .param("type","sale").param("id",Long.toString(debtSale)).param("requestKey",UUID.randomUUID().toString()).param("settleAll","true"))
+                .andExpect(redirectedUrl("/capital?section=debts"));
+        decimal("SELECT paid_amount FROM outbound_order WHERE id=?",debtSale,"200");
+        decimal("SELECT SUM(amount) FROM cash_payment WHERE outbound_id=?",debtSale,"200");
+    }
+
     @Test void chonLoBanTinhDungVonVaChanVuotTon() throws Exception {
         long p=product();receive(p,"100","4","0");receive(p,"50.5","6","0");
         var lots=jdbc.queryForList("SELECT id FROM batch WHERE product_id=? ORDER BY id",Long.class,p);
@@ -153,7 +181,7 @@ class OperationsPostgresTest {
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Phiếu nhập hàng #"+purchase+"<"))))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Đã thanh toán đủ"))));
         mvc.perform(get("/capital?section=unknown")).andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Vốn trong kho:")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Vốn trong kho:"))))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Tổng tiền phiếu:"))));
         for(String url : new String[]{"/outbound","/outbound/new","/outbound/new?kind=WASTE","/outbound/"+id,"/outbound/"+wasteId,"/capital","/stock","/purchases"})
             mvc.perform(get(url)).andExpect(status().isOk());

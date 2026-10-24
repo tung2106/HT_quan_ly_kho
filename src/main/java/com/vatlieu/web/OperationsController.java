@@ -55,12 +55,13 @@ public class OperationsController {
         catch (IllegalArgumentException e) { flash.addFlashAttribute("error",e.getMessage()); return "redirect:/outbound"; }
     }
     @GetMapping("/capital")
-    public String capital(@RequestParam(defaultValue="capital") String section,
+    public String capital(@RequestParam(defaultValue="menu") String section,
                           @RequestParam(defaultValue="") String from,
                           @RequestParam(defaultValue="") String to,
                           @RequestParam(defaultValue="") String partner, Model model) {
-        if (!java.util.Set.of("capital", "debts", "receipts", "payments").contains(section)) section = "capital";
+        if (!java.util.Set.of("menu", "capital", "debts", "receipts", "payments").contains(section)) section = "menu";
         model.addAttribute("section", section);
+        if ("menu".equals(section)) return "capital";
         model.addAttribute("summary",service.summary());
         var debts = service.debts();
         debts.forEach(d -> d.put("request_key",UUID.randomUUID()));
@@ -76,9 +77,9 @@ public class OperationsController {
         return "capital";
     }
     @PostMapping("/capital/pay")
-    public String pay(@RequestParam String type,@RequestParam long id,@RequestParam BigDecimal amount,
-                      @RequestParam UUID requestKey,@RequestParam(defaultValue="") String note,RedirectAttributes flash) {
-        try { service.pay(type,id,amount,requestKey,note); flash.addFlashAttribute("msg","Đã ghi thanh toán"); }
+    public String pay(@RequestParam String type,@RequestParam long id,@RequestParam(required=false) BigDecimal amount,
+                      @RequestParam UUID requestKey,@RequestParam(defaultValue="") String note,@RequestParam(defaultValue="false") boolean settleAll,RedirectAttributes flash) {
+        try { service.pay(type,id,amount,requestKey,note,settleAll); flash.addFlashAttribute("msg","Đã ghi thanh toán"); }
         catch (IllegalArgumentException e) { flash.addFlashAttribute("error",e.getMessage()); }
         return "redirect:/capital?section=debts";
     }

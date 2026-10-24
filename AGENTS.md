@@ -68,3 +68,4 @@ Java 17, Spring Boot 3.3, Spring Data JPA, PostgreSQL, Flyway, Thymeleaf + Boots
   Kiểm tra lô thuộc sản phẩm, còn đủ tồn sau quy đổi; trừ và lưu giá vốn lô đã chọn, tính lại bình quân tồn.
   Hao hụt vẫn FIFO. Quản lý xem các lô còn tồn tại /stock/lots (phiếu nhập, NCC, số lượng, giá vốn).
   Nhân viên chọn lô khi bán nhưng không xem giá vốn; chi tiết phiếu hiển thị các lô thực tế đã xuất.
+- Tất toán: phiếu nhập/xuất bán mới có lựa chọn ghi đã trả/thu đủ tổng tiền sau làm tròn (nhập gồm cước). Công nợ có Ghi tiền từng phần và Tất toán phần nợ hiện tại; khóa phiếu, chống gửi trùng, lưu lịch sử thu/trả, không xóa nợ.

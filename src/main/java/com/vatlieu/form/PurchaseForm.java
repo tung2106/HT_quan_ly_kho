@@ -14,6 +14,7 @@ public class PurchaseForm {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate orderDate = LocalDate.now();
     private BigDecimal shippingCost;
+    private boolean settleAll;
     private BigDecimal paidAmount;
     private String note;
     private List<PurchaseItemForm> items = new ArrayList<>();

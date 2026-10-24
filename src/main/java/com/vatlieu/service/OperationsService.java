@@ -56,7 +56,7 @@ public class OperationsService {
             lines.add(new Line(sale ? row.getBatchId() : null, row.getProductId(), qty, row.getQty(), unit, price, row.getQty().multiply(price)));
         }
         BigDecimal total = InventoryMath.total(lines.stream().map(Line::amount).toList());
-        BigDecimal paid = InventoryMath.payment(form.getPaidAmount() == null ? BigDecimal.ZERO : form.getPaidAmount(), total);
+        BigDecimal paid = InventoryMath.payment(sale && form.isSettleAll() ? total : (form.getPaidAmount() == null ? BigDecimal.ZERO : form.getPaidAmount()), total);
         if (paid.compareTo(total) < 0 && (form.getCustomer() == null || form.getCustomer().isBlank()))
             throw new IllegalArgumentException("Hãy ghi tên/thông tin khách để theo dõi khoản nợ");
         Long orderId = jdbc.queryForObject("""
@@ -100,6 +100,11 @@ public class OperationsService {
 
     @Transactional
     public void pay(String type, long id, BigDecimal amount, UUID key, String note) {
+        pay(type,id,amount,key,note,false);
+    }
+
+    @Transactional
+    public void pay(String type, long id, BigDecimal amount, UUID key, String note, boolean settleAll) {
         current.requireOwner();
         lockRequest(key);
         if (!jdbc.queryForList("SELECT id FROM cash_payment WHERE request_key=?",key).isEmpty()) return;
@@ -111,10 +116,11 @@ public class OperationsService {
         Map<String,Object> order = found.get(0);
         if (!purchase && !"SALE".equals(order.get("kind"))) throw new IllegalArgumentException("Phiếu hao hụt không thu tiền");
         BigDecimal remaining = ((BigDecimal)order.get("total_amount")).subtract((BigDecimal)order.get("paid_amount"));
-        amount = InventoryMath.payment(amount,remaining);
+        if (settleAll && remaining.signum() == 0) return;
+        amount = InventoryMath.payment(settleAll ? remaining : amount,remaining);
         if (amount.signum() == 0) throw new IllegalArgumentException("Tiền thanh toán phải lớn hơn 0");
         jdbc.update("UPDATE " + table + " SET paid_amount=paid_amount+? WHERE id=?",amount,id);
-        jdbc.update("INSERT INTO cash_payment("+(purchase ? "purchase_id" : "outbound_id")+",amount,note,request_key,created_by) VALUES (?,?,?,?,?)",id,amount,note,key,current.id());
+        jdbc.update("INSERT INTO cash_payment("+(purchase ? "purchase_id" : "outbound_id")+",amount,note,request_key,created_by) VALUES (?,?,?,?,?)",id,amount,settleAll ? "Tất toán" + (note == null || note.isBlank() ? "" : ": " + note) : note,key,current.id());
     }
 
     public List<Map<String,Object>> orders() {

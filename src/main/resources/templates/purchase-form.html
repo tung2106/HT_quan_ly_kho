@@ -75,6 +75,7 @@
         <input class="form-control" type="number" step="any" min="0" name="shippingCost" th:value="${form.shippingCost}">
       </div>
       <div class="col-12 col-sm-6">
+<label class="form-check mt-2 mb-2"><input class="form-check-input settle-all" type="checkbox" name="settleAll" value="true" th:checked="${form.settleAll}"><span class="form-check-label">Tất toán — đã trả đủ tiền phiếu nhập (gồm cước)</span></label><small class="d-block mb-2">Khi lưu, hệ thống ghi đã thanh toán toàn bộ tổng tiền phiếu. Chỉ chọn khi đã thực nhận/trả đủ tiền.</small>
         <label class="form-label">Đã trả NCC</label>
         <input class="form-control" type="number" step="any" min="0" name="paidAmount" th:value="${form.paidAmount}">
       </div>
@@ -114,5 +115,5 @@
 </script>
 <script defer th:src="@{/js/purchase-entry.js}"></script>
 <nav th:replace="~{fragments :: nav}"></nav>
-</body>
+<script defer th:src="@{/js/settlement.js}"></script></body>
 </html>

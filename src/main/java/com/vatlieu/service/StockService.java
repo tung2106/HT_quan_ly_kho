@@ -22,7 +22,7 @@ public class StockService {
 
     public List<java.util.Map<String,Object>> lots(boolean includeCost) {
         var rows = jdbc.queryForList("""
-                SELECT b.id,b.product_id,p.name,p.base_unit,p.active,b.received_date,b.qty_in,b.qty_left,
+                SELECT b.id,b.product_id,p.name,p.product_group,p.base_unit,p.active,b.received_date,b.qty_in,b.qty_left,
                        b.unit_cost,pi.order_id AS purchase_id,COALESCE(s.name,'Không rõ NCC') AS supplier
                 FROM batch b JOIN product p ON p.id=b.product_id
                 LEFT JOIN purchase_item pi ON pi.id=b.purchase_item_id
@@ -34,6 +34,21 @@ public class StockService {
         return rows;
     }
 
+    public record ProductLots(Long productId, String name, String group, List<java.util.Map<String,Object>> batches) {}
+
+    public List<ProductLots> lotsByProduct() {
+        // Gom bằng mã sản phẩm để không trộn lô của hai sản phẩm trùng tên.
+        var grouped = new java.util.LinkedHashMap<Long, List<java.util.Map<String,Object>>>();
+        for (var lot : lots(true)) {
+            Long id = ((Number) lot.get("product_id")).longValue();
+            grouped.computeIfAbsent(id, key -> new java.util.ArrayList<>()).add(lot);
+        }
+        return grouped.entrySet().stream().map(entry -> {
+            var first = entry.getValue().get(0);
+            return new ProductLots(entry.getKey(), (String) first.get("name"),
+                    (String) first.get("product_group"), entry.getValue());
+        }).toList();
+    }
     public List<StockRow> findAll() {
         return jdbc.query("""
                 SELECT s.product_id, s.name, s.base_unit, s.qty_on_hand, s.min_stock,

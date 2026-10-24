@@ -40,6 +40,17 @@
     try { initial = sessionStorage.getItem(key); } catch (_) { /* Mặc định tab trả nợ. */ }
   }
   activate(tabs.some(t => t.getAttribute('aria-controls') === initial) ? initial : 'supplier-debts', false);
+  // Mở đúng phiếu cần trả từ lịch sử nhập hàng, kể cả trước đó đang xem tab thu khách.
+  if (/^purchase-debt-\d+$/.test(location.hash.slice(1))) {
+    activate('supplier-debts', false);
+    try { sessionStorage.setItem(key, 'supplier-debts'); } catch (_) { /* Không bắt buộc lưu tab. */ }
+    const target = document.getElementById(location.hash.slice(1));
+    if (target) {
+      target.classList.add('border-danger', 'border-2');
+      target.scrollIntoView({ block: 'start' });
+      target.focus({ preventScroll: true });
+    }
+  }
   tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => activate(tab.getAttribute('aria-controls')));
     tab.addEventListener('keydown', event => {

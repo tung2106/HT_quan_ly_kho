@@ -4,8 +4,14 @@
 <body><main class="container py-3">
 <h1 class="h5">Các lô còn tồn</h1>
 <p>Giá vốn từng lô đã gồm cước nhập hàng được phân bổ.</p>
-<p th:if="${#lists.isEmpty(lots)}">Chưa có lô còn tồn.</p>
-<div class="card card-body mb-3" th:each="b : ${lots}">
+<p th:if="${#lists.isEmpty(productLots)}">Chưa có lô còn tồn.</p>
+<section th:each="group : ${ {'AGRICULTURE','MATERIAL'} }" class="mb-4">
+<h2 class="h5" th:text="${group == 'AGRICULTURE' ? 'Nông sản' : 'Vật liệu xây dựng'}"></h2>
+<p class="text-muted" th:if="${#lists.isEmpty(productLots.?[group() == #vars.group])}">Nhóm này chưa có lô còn tồn.</p>
+<details class="card mb-2" th:each="product : ${productLots}" th:if="${product.group() == group}">
+<summary class="p-3 fw-bold" th:text="|${product.name()} · ${#lists.size(product.batches())} lô còn tồn|"></summary>
+<div class="px-2 pb-2">
+<div class="card card-body mb-2" th:each="b : ${product.batches()}">
 <strong th:text="${b.name}"></strong>
 <span th:text="|Lô #${b.id} · Ngày nhập ${b.received_date}|"></span>
 <span th:text="|Nhà cung cấp: ${b.supplier}|"></span>
@@ -16,4 +22,5 @@
 <span th:text="|Vốn còn lại: ${#numbers.formatDecimal(b.unit_cost.multiply(b.qty_left),1,'POINT',0,'COMMA')} VNĐ|"></span>
 <span th:unless="${b.active}" class="text-muted">Sản phẩm đã ngừng kinh doanh</span>
 </div>
+</div></details></section>
 </main><nav th:replace="~{fragments :: nav}"></nav></body></html>

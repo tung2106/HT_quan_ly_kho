@@ -90,6 +90,7 @@ public class PurchaseService {
         BigDecimal totalValue = lines.stream().map(Line::value).reduce(BigDecimal.ZERO, BigDecimal::add);
         InventoryMath.price(shipping);
         order.setTotalAmount(InventoryMath.total(List.of(totalValue, shipping)));
+        if (f.isSettleAll()) order.setPaidAmount(order.getTotalAmount());
         InventoryMath.payment(order.getPaidAmount(), order.getTotalAmount());
         List<BigDecimal> landedCosts = new ArrayList<>();
 
