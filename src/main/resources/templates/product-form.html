@@ -8,21 +8,27 @@
 
   <form method="post" th:action="@{/products}" th:object="${form}" class="card card-body mb-3">
     <input type="hidden" th:field="*{id}">
-    <label class="form-label">Danh mục</label>
-    <select class="form-select mb-2" th:field="*{categoryId}" required>
-      <option value="">-- chọn --</option>
-      <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"></option>
+    <label class="form-label">Nhóm hàng</label>
+    <select class="form-select mb-2" th:field="*{productGroup}" required>
+      <option value="MATERIAL">Vật liệu xây dựng</option>
+      <option value="AGRICULTURE">Nông sản</option>
     </select>
     <label class="form-label">Tên sản phẩm</label>
     <input class="form-control mb-2" th:field="*{name}" required>
     <label class="form-label">Mã (không bắt buộc)</label>
     <input class="form-control mb-2" th:field="*{code}">
     <label class="form-label">Đơn vị gốc (kho lưu theo đơn vị này: kg, viên, bao, m3...)</label>
-    <input class="form-control mb-2" th:field="*{baseUnit}" required>
+    <select class="form-select mb-2" th:field="*{baseUnit}" required>
+      <option value="kg">kg</option><option value="viên">viên</option><option value="bao">bao</option>
+      <option value="m3">m³</option><option value="m2">m²</option><option value="m">m</option>
+      <option value="cái">cái</option><option value="tấm">tấm</option><option value="cây">cây</option>
+      <option th:if="${form.baseUnit != null and !#lists.contains({'kg','viên','bao','m3','m2','m','cái','tấm','cây'},form.baseUnit)}" th:value="${form.baseUnit}" th:text="${form.baseUnit}"></option>
+    </select>
+    <p class="small text-muted" id="agriculture-unit-note">Nông sản dùng kg cân thực tế; không quy đổi cố định theo bao.</p>
     <label class="form-label">Giá bán lẻ / đơn vị gốc</label>
     <input class="form-control mb-2" type="number" step="any" min="0" th:field="*{retailPrice}">
     <label class="form-label">Mức tồn tối thiểu (cảnh báo sắp hết)</label>
-    <input class="form-control mb-2" type="number" step="any" min="0" th:field="*{minStock}">
+    <input class="form-control mb-2" type="number" step="any" min="0" id="minStock" name="minStock" th:value="${form.minStock == null ? null : form.minStock.stripTrailingZeros().toPlainString()}">
     <label class="form-label">Ghi chú</label>
     <input class="form-control mb-2" th:field="*{note}">
     <div class="form-check mb-3">
@@ -32,7 +38,7 @@
     <button class="btn btn-primary">Lưu</button>
   </form>
 
-  <div class="card card-body" th:if="${form.id != null}">
+  <div class="card card-body" th:if="${form.id != null and form.productGroup == 'MATERIAL'}">
     <h6>Quy đổi đơn vị</h6>
     <p class="small text-muted">Ví dụ: 1 bao = 50 (kg). Dùng khi nhập/bán theo đơn vị khác đơn vị gốc.</p>
     <ul class="list-group mb-3">
@@ -50,6 +56,18 @@
     </form>
   </div>
 </div>
+<script>
+  const group = document.getElementById('productGroup');
+  const baseUnit = document.getElementById('baseUnit');
+  function syncProductGroup() {
+    const agriculture = group.value === 'AGRICULTURE';
+    if (agriculture) baseUnit.value = 'kg';
+    Array.from(baseUnit.options).forEach(o => o.disabled = agriculture && o.value !== 'kg');
+    document.getElementById('agriculture-unit-note').hidden = !agriculture;
+  }
+  group.addEventListener('change', syncProductGroup);
+  syncProductGroup();
+</script>
 <nav th:replace="~{fragments :: nav}"></nav>
 </body>
 </html>

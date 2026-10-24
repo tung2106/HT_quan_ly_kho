@@ -18,7 +18,7 @@ public class UnitOptionsService {
                 UNION ALL
                 SELECT p.id, u.unit_name, u.unit_name || ' = ' || trim_scale(u.factor)::text || ' ' || p.base_unit, false
                 FROM unit_conversion u JOIN product p ON p.id=u.product_id
-                WHERE p.active AND lower(u.unit_name)<>lower(p.base_unit)
+                WHERE p.active AND p.product_group='MATERIAL' AND lower(u.unit_name)<>lower(p.base_unit)
                 ORDER BY id, is_base DESC, unit
                 """, (rs,n) -> new Choice(rs.getLong("id"), rs.getString("unit"), rs.getString("label")));
     }

@@ -3,7 +3,6 @@ package com.vatlieu.web;
 import com.vatlieu.entity.Product;
 import com.vatlieu.entity.UnitConversion;
 import com.vatlieu.form.ProductForm;
-import com.vatlieu.repository.CategoryRepository;
 import com.vatlieu.repository.ProductRepository;
 import com.vatlieu.repository.UnitConversionRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +19,8 @@ import java.math.BigDecimal;
 @RequestMapping("/products")
 public class ProductController {
     private final ProductRepository productRepo;
-    private final CategoryRepository categoryRepo;
     private final UnitConversionRepository convRepo;
+    private final com.vatlieu.service.ProductService service;
 
     @GetMapping
     public String list(Model m) {
@@ -32,7 +31,6 @@ public class ProductController {
     @GetMapping("/new")
     public String create(Model m) {
         m.addAttribute("form", new ProductForm());
-        m.addAttribute("categories", categoryRepo.findAllByOrderByNameAsc());
         return "product-form";
     }
 
@@ -41,7 +39,7 @@ public class ProductController {
         Product p = productRepo.findById(id).orElseThrow();
         ProductForm f = new ProductForm();
         f.setId(p.getId());
-        f.setCategoryId(p.getCategory().getId());
+        f.setProductGroup(p.getProductGroup());
         f.setCode(p.getCode());
         f.setName(p.getName());
         f.setBaseUnit(p.getBaseUnit());
@@ -52,28 +50,24 @@ public class ProductController {
         m.addAttribute("form", f);
         m.addAttribute("product", p);
         m.addAttribute("units", convRepo.findByProductIdOrderByUnitNameAsc(id));
-        m.addAttribute("categories", categoryRepo.findAllByOrderByNameAsc());
         return "product-form";
+    }
+
+    @PostMapping("/{id}/delete")
+    public String delete(@PathVariable long id, RedirectAttributes ra) {
+        try { service.delete(id); ra.addFlashAttribute("msg", "Đã ngừng nhập/bán sản phẩm. Tồn kho, vốn và lịch sử vẫn được giữ nguyên."); }
+        catch (IllegalArgumentException e) { ra.addFlashAttribute("error", e.getMessage()); }
+        return "redirect:/products";
     }
 
     @PostMapping
     public String save(@ModelAttribute ProductForm f, RedirectAttributes ra) {
         try {
-            // Sửa: nạp lại bản ghi cũ để KHÔNG ghi đè giá vốn bình quân (avgCost)
-            Product p = f.getId() == null ? new Product() : productRepo.findById(f.getId()).orElseThrow();
-            p.setCategory(categoryRepo.getReferenceById(f.getCategoryId()));
-            p.setCode(f.getCode() == null || f.getCode().isBlank() ? null : f.getCode().trim());
-            p.setName(f.getName().trim());
-            p.setBaseUnit(f.getBaseUnit().trim());
-            p.setMinStock(f.getMinStock() == null ? BigDecimal.ZERO : f.getMinStock());
-            p.setRetailPrice(f.getRetailPrice() == null ? BigDecimal.ZERO : f.getRetailPrice());
-            p.setActive(f.isActive());
-            p.setNote(f.getNote());
-            productRepo.save(p);
+            Product p = service.save(f);
             ra.addFlashAttribute("msg", "Đã lưu sản phẩm");
             return "redirect:/products/" + p.getId() + "/edit";
-        } catch (DataIntegrityViolationException e) {
-            ra.addFlashAttribute("error", "Mã sản phẩm bị trùng");
+        } catch (DataIntegrityViolationException | IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e instanceof IllegalArgumentException ? e.getMessage() : "Mã sản phẩm bị trùng hoặc dữ liệu không hợp lệ");
             return f.getId() == null ? "redirect:/products/new" : "redirect:/products/" + f.getId() + "/edit";
         }
     }
@@ -81,7 +75,9 @@ public class ProductController {
     @PostMapping("/{id}/units")
     public String addUnit(@PathVariable Long id, @RequestParam String unitName,
                           @RequestParam BigDecimal factor, RedirectAttributes ra) {
-        if (factor.signum() <= 0) {
+        if (productRepo.findById(id).orElseThrow().isAgriculture()) {
+            ra.addFlashAttribute("error", "Nông sản dùng kg cân thực tế, không dùng quy đổi bao cố định");
+        } else if (factor.signum() <= 0) {
             ra.addFlashAttribute("error", "Hệ số quy đổi phải > 0");
         } else {
             UnitConversion u = new UnitConversion();

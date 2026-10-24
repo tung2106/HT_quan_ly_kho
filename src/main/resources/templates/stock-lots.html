@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Các lô còn tồn')}"></head>
+<body><main class="container py-3">
+<h1 class="h5">Các lô còn tồn</h1>
+<p>Giá vốn từng lô đã gồm cước nhập hàng được phân bổ.</p>
+<p th:if="${#lists.isEmpty(lots)}">Chưa có lô còn tồn.</p>
+<div class="card card-body mb-3" th:each="b : ${lots}">
+<strong th:text="${b.name}"></strong>
+<span th:text="|Lô #${b.id} · Ngày nhập ${b.received_date}|"></span>
+<span th:text="|Nhà cung cấp: ${b.supplier}|"></span>
+<span th:if="${b.purchase_id != null}" th:text="|Phiếu nhập #${b.purchase_id}|"></span>
+<span th:text="|Đã nhập: ${b.qty_in.stripTrailingZeros().toPlainString()} ${b.base_unit}|"></span>
+<strong th:text="|Còn lại: ${b.qty_left.stripTrailingZeros().toPlainString()} ${b.base_unit}|"></strong>
+<span th:text="|Giá vốn: ${#numbers.formatDecimal(b.unit_cost,1,'POINT',0,'COMMA')} VNĐ / ${b.base_unit}|"></span>
+<span th:text="|Vốn còn lại: ${#numbers.formatDecimal(b.unit_cost.multiply(b.qty_left),1,'POINT',0,'COMMA')} VNĐ|"></span>
+<span th:unless="${b.active}" class="text-muted">Sản phẩm đã ngừng kinh doanh</span>
+</div>
+</main><nav th:replace="~{fragments :: nav}"></nav></body></html>

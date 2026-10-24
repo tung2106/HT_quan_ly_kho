@@ -42,6 +42,12 @@ Java 17, Spring Boot 3.3, Spring Data JPA, PostgreSQL, Flyway, Thymeleaf + Boots
   và những gì CHƯA làm.
 
 ## Phạm vi hiện tại (cập nhật khi xong từng bước)
+- Ô nhập tiền tự phân cách hàng nghìn bằng dấu chấm, nhập nguyên đồng; tiền hiển thị không có phần lẻ và có VNĐ, dữ liệu gửi về vẫn là số chuẩn.
+- Quản lý có nút Xóa ở từng sản phẩm: ngừng nhập/bán, giữ lịch sử và vẫn hiển thị tồn còn lại, vốn.
+- Sản phẩm chọn trực tiếp Vật liệu xây dựng hoặc Nông sản, không cần tạo danh mục trước.
+  Nông sản dùng kg thực tế: nhập tổng kg × giá/kg, kg từng bao × giá/kg, hoặc tổng kg + tổng tiền lô.
+  Lưu cách nhập, kg từng bao và tiền hàng; không dùng quy đổi bao cố định cho nông sản.
+  Tiền phiếu cộng toàn bộ rồi làm tròn; giá/kg nông sản tính từ lô lưu 12 số lẻ.
 - Đã có (Bước 2): danh mục, sản phẩm, quy đổi đơn vị, nhà cung cấp, nhập hàng, tồn kho;
   xuất bán nội bộ, hao hụt FIFO, công nợ theo phiếu và lịch sử thu/trả,
   tổng hợp vốn tồn, doanh thu, giá vốn, hao hụt và chênh lệch thu/trả.
@@ -54,3 +60,11 @@ Java 17, Spring Boot 3.3, Spring Data JPA, PostgreSQL, Flyway, Thymeleaf + Boots
   Quản lý thêm/sửa/xóa danh mục (chặn xóa khi còn sản phẩm); nút quay lại; phiếu nhập một dòng.
 - Nhà cung cấp: quản lý xóa khỏi danh sách bằng cách ngừng sử dụng; không cho chọn khi nhập mới,
   vẫn giữ tên trên phiếu cũ, công nợ và cho phép trả nợ tiếp.
+  Có danh sách đã xóa và khôi phục để chọn lại khi nhập hàng.
+  Quản lý sửa tên/số điện thoại nhà cung cấp, kể cả đã ẩn; giữ nguyên liên kết phiếu và công nợ.
+  Tìm theo một phần tên hoặc số điện thoại ở cả danh sách đang sử dụng và đã xóa.
+  Tìm tên không phân biệt dấu hoặc hoa/thường, gồm quy đổi đ/d; giữ nguyên tên hiển thị.
+- Xuất bán có thể chọn lô cụ thể ở từng dòng; để trống thì tự động FIFO. Bán nhiều lô bằng nhiều dòng.
+  Kiểm tra lô thuộc sản phẩm, còn đủ tồn sau quy đổi; trừ và lưu giá vốn lô đã chọn, tính lại bình quân tồn.
+  Hao hụt vẫn FIFO. Quản lý xem các lô còn tồn tại /stock/lots (phiếu nhập, NCC, số lượng, giá vốn).
+  Nhân viên chọn lô khi bán nhưng không xem giá vốn; chi tiết phiếu hiển thị các lô thực tế đã xuất.

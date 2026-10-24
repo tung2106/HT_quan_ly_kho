@@ -110,3 +110,28 @@ body > .container > h5, main > h1 { margin-top: 12px; margin-bottom: 22px !impor
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; scroll-behavior: auto !important; }
 }
+/* Ô tiền giữ hậu tố cố định, ưu tiên đủ chiều rộng trên điện thoại. */
+.money-input-wrap { flex-wrap: nowrap; min-width: 0; }
+.money-input-wrap > .form-control { min-width: 0; font-variant-numeric: tabular-nums; }
+.money-input-wrap > .input-group-text { flex-shrink: 0; }
+.card-body, .list-group-item { overflow-wrap: anywhere; min-width: 0; }
+.form-control, .form-select { min-width: 0; max-width: 100%; }
+/* Các chức năng vốn và công nợ: vùng chạm lớn, màu riêng và trạng thái rõ ràng. */
+.capital-menu-blue { --menu-color: #075b97; --menu-tint: #e7f4ff; }
+.capital-menu-purple { --menu-color: #623795; --menu-tint: #f3ecff; }
+.capital-menu-green { --menu-color: #17643d; --menu-tint: #e6f7ed; }
+.capital-menu-red { --menu-color: #a32c36; --menu-tint: #fff0f1; }
+.capital-menu-item {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  height: 100%; min-height: 158px; padding: 16px; border-radius: 18px;
+  border: 2px solid var(--menu-color); background: var(--menu-tint);
+  color: var(--menu-color); text-decoration: none; overflow-wrap: anywhere;
+  box-shadow: 0 4px 12px #143c6015;
+}
+.capital-menu-item strong { font-size: 1.1rem; }
+.capital-menu-item > span:not(.capital-menu-icon) { font-size: .85rem; }
+.capital-menu-icon { font-size: 1.6rem; line-height: 1; font-weight: 700; }
+.capital-menu-item[aria-current="page"] { background: var(--menu-color); color: white; box-shadow: 0 5px 16px #143c6030; }
+.capital-menu-item small { font-weight: 700; border: 1px solid currentColor; border-radius: 20px; padding: 2px 9px; }
+.capital-menu-item:hover { color: var(--menu-color); background: white; }
+.capital-menu-item:focus-visible { outline: 3px solid #143c60; outline-offset: 3px; }

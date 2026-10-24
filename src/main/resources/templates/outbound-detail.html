@@ -7,15 +7,18 @@
   <div class="card card-body mb-2" th:each="i : ${o.items}">
     <strong th:text="${i.name}"></strong>
     <span th:text="|${i.entered_qty.stripTrailingZeros().toPlainString()} ${i.entered_unit} → ${i.qty.stripTrailingZeros().toPlainString()} ${i.base_unit}|"></span>
-    <span th:if="${o.kind == 'SALE'}" th:text="|Đơn giá: ${#numbers.formatDecimal(i.unit_price,1,'POINT',2,'COMMA')} đ|"></span>
-    <span th:if="${isOwner}" th:text="|Giá vốn FIFO: ${#numbers.formatDecimal(i.cost_amount,1,'POINT',2,'COMMA')} đ|"></span>
+    <span th:if="${o.kind == 'SALE'}" th:text="|Đơn giá: ${#numbers.formatDecimal(i.unit_price,1,'POINT',0,'COMMA')} VNĐ|"></span>
+    <span th:if="${isOwner}" th:text="|Giá vốn xuất: ${#numbers.formatDecimal(i.cost_amount,1,'POINT',0,'COMMA')} VNĐ|"></span>
   </div>
-  <div th:if="${o.kind == 'SALE'}">
-    <p th:text="|Tổng tiền: ${#numbers.formatDecimal(o.total_amount,1,'POINT',0,'COMMA')} đ|"></p>
-    <p th:text="|Đã thu: ${#numbers.formatDecimal(o.paid_amount,1,'POINT',0,'COMMA')} đ|"></p>
-    <p class="text-danger" th:text="|Còn nợ: ${#numbers.formatDecimal(o.total_amount.subtract(o.paid_amount),1,'POINT',0,'COMMA')} đ|"></p>
+  <div th:if="${!#lists.isEmpty(o.usedLots)}" class="card card-body mb-3">
+<strong>Lô đã xuất</strong>
+<span th:each="b : ${o.usedLots}" th:text="|${b.name} · Lô #${b.batch_id}: ${b.qty.stripTrailingZeros().toPlainString()} ${b.base_unit}|"></span>
+</div><div th:if="${o.kind == 'SALE'}">
+    <p th:text="|Tổng tiền: ${#numbers.formatDecimal(o.total_amount,1,'POINT',0,'COMMA')} VNĐ|"></p>
+    <p th:text="|Đã thu: ${#numbers.formatDecimal(o.paid_amount,1,'POINT',0,'COMMA')} VNĐ|"></p>
+    <p class="text-danger" th:text="|Còn nợ: ${#numbers.formatDecimal(o.total_amount.subtract(o.paid_amount),1,'POINT',0,'COMMA')} VNĐ|"></p>
     <a th:if="${isOwner}" class="btn btn-primary w-100 mb-2" th:href="@{/capital}">Ghi thu tiền / xem công nợ</a>
   </div>
-  <p th:if="${isOwner}" th:text="|Tổng giá vốn: ${#numbers.formatDecimal(o.cost_amount,1,'POINT',2,'COMMA')} đ|"></p>
+  <p th:if="${isOwner}" th:text="|Tổng giá vốn: ${#numbers.formatDecimal(o.cost_amount,1,'POINT',0,'COMMA')} VNĐ|"></p>
   <a class="btn btn-outline-secondary w-100" th:href="@{/outbound}">Danh sách phiếu xuất</a>
 </main><nav th:replace="~{fragments :: nav}"></nav></body></html>

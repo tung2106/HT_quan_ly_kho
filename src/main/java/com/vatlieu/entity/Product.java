@@ -9,8 +9,10 @@ import java.math.BigDecimal;
 public class Product {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @ManyToOne(optional = false) @JoinColumn(name = "category_id")
+    @ManyToOne @JoinColumn(name = "category_id")
     private Category category;
+    private String productGroup = "MATERIAL";
+    public boolean isAgriculture() { return "AGRICULTURE".equals(productGroup); }
     private String code;
     @Column(nullable = false)
     private String name;

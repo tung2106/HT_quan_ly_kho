@@ -17,4 +17,7 @@ public class PurchaseItem {
     private BigDecimal qty;
     /** Đơn giá theo đơn vị gốc (chưa gồm cước vận chuyển). */
     private BigDecimal unitCost;
+    private String entryMode = "WEIGHT";
+    private String bagWeights;
+    private BigDecimal lineAmount;
 }

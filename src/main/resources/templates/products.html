@@ -8,20 +8,29 @@
     <a th:if="${isOwner}" class="btn btn-primary" th:href="@{/products/new}">+ Thêm</a>
   </div>
   <div th:replace="~{fragments :: alerts}"></div>
+  <section th:each="group : ${ {'MATERIAL','AGRICULTURE'} }">
+  <h2 class="h5 mt-3" th:text="${group == 'MATERIAL' ? 'Vật liệu xây dựng' : 'Nông sản'}"></h2>
   <div class="list-group">
-    <a th:if="${isOwner}" class="list-group-item list-group-item-action" th:each="p : ${products}"
-       th:href="@{/products/{id}/edit(id=${p.id})}" th:classappend="${!p.active} ? 'text-muted'">
-      <div class="d-flex justify-content-between">
-        <strong th:text="${p.name}"></strong>
-        <span th:text="${#numbers.formatDecimal(p.retailPrice,1,'POINT',0,'COMMA')} + ' / ' + ${p.baseUnit}"></span>
+    <div th:if="${isOwner and p.productGroup == group}" class="list-group-item" th:each="p : ${products}" th:classappend="${!p.active} ? 'text-muted'">
+      <div class="d-flex flex-wrap gap-2 justify-content-between">
+        <a th:href="@{/products/{id}/edit(id=${p.id})}"><strong th:text="${p.name}"></strong></a>
+        <span th:text="${#numbers.formatDecimal(p.retailPrice,1,'POINT',0,'COMMA')} + ' VNĐ / ' + ${p.baseUnit}"></span>
       </div>
-      <small class="text-muted" th:text="${p.category.name} + ' · giá vốn ' + ${#numbers.formatDecimal(p.avgCost,1,'POINT',0,'COMMA')}"></small>
-    </a>
-    <div th:unless="${isOwner}" class="list-group-item" th:each="p : ${products}">
+      <small class="text-muted" th:text="'Giá vốn ' + ${#numbers.formatDecimal(p.avgCost,1,'POINT',0,'COMMA')} + ' VNĐ'"></small>
+      <span th:if="${!p.active}" class="badge bg-secondary">Ngừng kinh doanh</span>
+      <div class="d-flex gap-2 mt-2">
+      <a class="btn btn-outline-primary" th:href="@{/products/{id}/edit(id=${p.id})}">Sửa</a>
+      <form th:if="${p.active}" method="post" th:action="@{/products/{id}/delete(id=${p.id})}" onsubmit="return confirm('Ngừng nhập/bán sản phẩm này? Tồn kho, vốn và lịch sử vẫn được giữ nguyên.');">
+        <button class="btn btn-outline-danger" type="submit">Xóa</button>
+      </form>
+      </div>
+    </div>
+    <div th:if="${!isOwner and p.active and p.productGroup == group}" class="list-group-item" th:each="p : ${products}">
       <strong th:text="${p.name}"></strong>
-      <span th:text="${#numbers.formatDecimal(p.retailPrice,1,'POINT',0,'COMMA')} + ' / ' + ${p.baseUnit}"></span>
+      <span th:text="${#numbers.formatDecimal(p.retailPrice,1,'POINT',0,'COMMA')} + ' VNĐ / ' + ${p.baseUnit}"></span>
     </div>
   </div>
+  </section>
 </div>
 <nav th:replace="~{fragments :: nav}"></nav>
 </body>

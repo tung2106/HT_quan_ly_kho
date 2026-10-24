@@ -39,18 +39,21 @@ public class OperationsService {
             if (jdbc.queryForList("SELECT id FROM product WHERE id=? AND active FOR UPDATE", id).isEmpty())
                 throw new IllegalArgumentException("Sản phẩm không tồn tại hoặc đã ngừng sử dụng");
         }
-        record Line(long product, BigDecimal qty, BigDecimal enteredQty, String unit, BigDecimal price, BigDecimal amount) {}
+        record Line(Long batch, long product, BigDecimal qty, BigDecimal enteredQty, String unit, BigDecimal price, BigDecimal amount) {}
         List<Line> lines = new ArrayList<>();
         for (PurchaseItemForm row : rows) {
             if (row.getProductId() == null) throw new IllegalArgumentException("Hãy chọn sản phẩm cho mỗi dòng đã nhập");
             String base = jdbc.queryForObject("SELECT base_unit FROM product WHERE id=?", String.class, row.getProductId());
             String unit = row.getUnit() == null || row.getUnit().isBlank() ? base : row.getUnit().trim();
+            String group = jdbc.queryForObject("SELECT product_group FROM product WHERE id=?", String.class, row.getProductId());
+            if ("AGRICULTURE".equals(group) && !"kg".equals(unit))
+                throw new IllegalArgumentException("Nông sản xuất theo kg cân thực tế, không quy đổi bao");
             List<BigDecimal> factors = unit.equalsIgnoreCase(base) ? List.of(BigDecimal.ONE) : jdbc.queryForList(
                     "SELECT factor FROM unit_conversion WHERE product_id=? AND lower(unit_name)=lower(?)", BigDecimal.class, row.getProductId(), unit);
             if (factors.size() != 1) throw new IllegalArgumentException("Chưa khai báo quy đổi đơn vị: " + unit);
             BigDecimal qty = InventoryMath.quantity(row.getQty(), factors.get(0));
             BigDecimal price = sale ? InventoryMath.price(row.getUnitPrice()) : BigDecimal.ZERO;
-            lines.add(new Line(row.getProductId(), qty, row.getQty(), unit, price, row.getQty().multiply(price)));
+            lines.add(new Line(sale ? row.getBatchId() : null, row.getProductId(), qty, row.getQty(), unit, price, row.getQty().multiply(price)));
         }
         BigDecimal total = InventoryMath.total(lines.stream().map(Line::amount).toList());
         BigDecimal paid = InventoryMath.payment(form.getPaidAmount() == null ? BigDecimal.ZERO : form.getPaidAmount(), total);
@@ -68,7 +71,14 @@ public class OperationsService {
                     (rs,n) -> new InventoryMath.Lot(rs.getLong(1),rs.getBigDecimal(2),rs.getBigDecimal(3)), line.product());
             BigDecimal lotStock = lots.stream().map(InventoryMath.Lot::qty).reduce(BigDecimal.ZERO, BigDecimal::add);
             if (stock.compareTo(lotStock) != 0) throw new IllegalArgumentException("Tồn lô lệch lịch sử kho; cần đối chiếu trước khi xuất");
-            List<InventoryMath.Take> takes = InventoryMath.fifo(line.qty(), lots);
+            List<InventoryMath.Lot> selected = lots;
+            if (line.batch() != null) {
+                selected = lots.stream().filter(l -> l.id() == line.batch()).toList();
+                if (selected.isEmpty()) throw new IllegalArgumentException("Lô đã hết hàng hoặc không thuộc sản phẩm đã chọn");
+                if (selected.get(0).qty().compareTo(line.qty()) < 0)
+                    throw new IllegalArgumentException("Số lượng vượt tồn của lô #" + line.batch());
+            }
+            List<InventoryMath.Take> takes = InventoryMath.fifo(line.qty(), selected);
             BigDecimal cost = InventoryMath.cost(takes);
             totalCost = totalCost.add(cost);
             jdbc.update("INSERT INTO outbound_item(order_id,product_id,qty,entered_qty,entered_unit,unit_price,line_amount,cost_amount) VALUES (?,?,?,?,?,?,?,?)",
@@ -119,6 +129,8 @@ public class OperationsService {
         if(!owner && (!"SALE".equals(order.get("kind")) || !Objects.equals(order.get("created_by"),current.id())))
             throw new org.springframework.security.access.AccessDeniedException("Bạn chỉ được xem phiếu bán do mình tạo");
         order.put("items",jdbc.queryForList("SELECT i.*,p.name,p.base_unit FROM outbound_item i JOIN product p ON p.id=i.product_id WHERE order_id=? ORDER BY i.id",id));
+        var usedLots = jdbc.queryForList("SELECT t.batch_id,p.name,p.base_unit,-t.qty_change AS qty FROM stock_transaction t JOIN product p ON p.id=t.product_id WHERE t.ref_id=? AND t.tx_type=? ORDER BY t.id",id,order.get("kind"));
+        order.put("usedLots", usedLots);
         if(!owner) {
             order.remove("cost_amount");
             ((List<Map<String,Object>>)order.get("items")).forEach(item -> item.remove("cost_amount"));

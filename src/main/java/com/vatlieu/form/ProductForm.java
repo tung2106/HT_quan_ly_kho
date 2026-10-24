@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 public class ProductForm {
     private Long id;
     private Long categoryId;
+    private String productGroup = "MATERIAL";
     private String code;
     private String name;
     private String baseUnit;

@@ -81,7 +81,7 @@ class PurchaseServiceTest {
         assertThat(tx.getValue().getTxType()).isEqualTo(StockTransaction.PURCHASE);
         assertThat(tx.getValue().getBatch()).isSameAs(batch.getValue());
         assertThat(new StockService.StockRow(1L, product.getName(), "kg",
-                new BigDecimal("1000"), BigDecimal.ZERO, false, product.getAvgCost(), new BigDecimal("1800000")).value())
+                new BigDecimal("1000"), BigDecimal.ZERO, false, product.getAvgCost(), new BigDecimal("1800000"), true).value())
                 .isEqualByComparingTo("1800000");
     }
 

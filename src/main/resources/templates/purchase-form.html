@@ -5,14 +5,15 @@
 <div class="container py-3">
   <h5 class="mb-3">Nhập hàng</h5>
   <div th:replace="~{fragments :: alerts}"></div>
+  <p class="small">Chọn nhóm và sản phẩm ở mỗi dòng. <a th:href="@{/products/new}">Thêm sản phẩm mới</a></p>
 
   <form method="post" th:action="@{/purchases}">
     <div class="row g-2 mb-3">
-      <div class="col-6">
+      <div class="col-12 col-sm-6">
         <label class="form-label">Ngày nhập</label>
         <input type="date" class="form-control" name="orderDate" th:value="${form.orderDate}">
       </div>
-      <div class="col-6">
+      <div class="col-12 col-sm-6">
         <label class="form-label">Nhà cung cấp</label>
         <select class="form-select" name="supplierId">
           <option value="">-- không rõ --</option>
@@ -24,33 +25,56 @@
 
     <div id="rows">
       <div class="card card-body mb-2 row-item" th:each="it, s : ${form.items}">
+        <label class="form-label">Nhóm hàng</label>
+        <select class="form-select mb-2 purchase-group" aria-label="Nhóm hàng">
+          <option value="MATERIAL">Vật liệu xây dựng</option><option value="AGRICULTURE">Nông sản</option>
+        </select>
         <select class="form-select mb-2" th:name="|items[${s.index}].productId|">
           <option value="">-- chọn sản phẩm --</option>
           <option th:each="p : ${products}" th:value="${p.id}"
+                  th:attr="data-group=${p.productGroup}"
                   th:text="${p.name} + ' (' + ${p.baseUnit} + ')'"
                   th:selected="${it.productId != null and it.productId == p.id}"></option>
         </select>
+        <div class="agriculture-fields" hidden>
+          <label class="form-label">Cách nhập nông sản</label>
+          <select class="form-select mb-2 entry-mode" th:name="|items[${s.index}].entryMode|">
+            <option value="WEIGHT" th:selected="${it.entryMode == 'WEIGHT'}">Tổng kg thực tế × giá/kg</option>
+            <option value="BAGS" th:selected="${it.entryMode == 'BAGS'}">Cân từng bao × giá/kg</option>
+            <option value="LOT" th:selected="${it.entryMode == 'LOT'}">Cả lô: tổng kg và tổng tiền</option>
+          </select>
+          <div class="bags-field" hidden>
+            <label class="form-label">Kg từng bao — mỗi dòng một bao (ví dụ: 48,5 rồi xuống dòng 52)</label>
+            <textarea class="form-control mb-2" rows="4" maxlength="20000" th:name="|items[${s.index}].bagWeights|" th:text="${it.bagWeights}"></textarea>
+          </div>
+          <div class="lot-field" hidden>
+            <label class="form-label">Tổng tiền mua cả lô (VNĐ)</label>
+            <input class="form-control mb-2" type="number" min="0" step="0.01" th:name="|items[${s.index}].lotAmount|" th:value="${it.lotAmount}">
+          </div>
+          <p class="small text-muted">1 tấn = 1000 kg · 1 tạ = 100 kg · 1 yến = 10 kg.<br>Ví dụ: 1,5 tấn = 1500 kg. Hãy nhập số lượng theo kg thực tế.<br>Số bao không dùng làm đơn vị quy đổi.</p>
+        </div>
         <div class="row g-2">
-          <div class="col-4"><input class="form-control" type="number" step="any" min="0" placeholder="Số lượng"
-                 th:name="|items[${s.index}].qty|" th:value="${it.qty}"></div>
-          <div class="col-3"><select class="form-select unit-select" aria-label="Đơn vị" th:name="|items[${s.index}].unit|">
+          <div class="col-6 col-sm-4 qty-field"><label class="form-label qty-label">Số lượng</label><input class="form-control" type="number" step="any" min="0" placeholder="Số lượng"
+                 th:name="|items[${s.index}].qty|" th:value="${it.qty == null ? null : it.qty.stripTrailingZeros().toPlainString()}"></div>
+          <div class="col-6 col-sm-3"><label class="form-label">Đơn vị</label><select class="form-select unit-select" aria-label="Đơn vị" th:name="|items[${s.index}].unit|">
             <option value="">Chọn đơn vị</option>
             <option th:each="u : ${unitOptions}" th:value="${u.unit}" th:text="${u.label}" th:attr="data-product-id=${u.productId}"
                     th:selected="${it.productId == u.productId and it.unit == u.unit}"></option>
           </select></div>
-          <div class="col-5"><input class="form-control" type="number" step="any" min="0" placeholder="Đơn giá / đơn vị"
+          <div class="col-12 col-sm-5 price-field"><label class="form-label price-label">Đơn giá / đơn vị</label><input class="form-control" type="number" step="any" min="0" placeholder="Đơn giá / đơn vị"
                  th:name="|items[${s.index}].unitPrice|" th:value="${it.unitPrice}"></div>
         </div>
+        <button type="button" class="btn btn-outline-secondary mt-2" onclick="removePurchaseRow(this)">Xóa dòng</button>
       </div>
     </div>
     <button type="button" class="btn btn-outline-secondary w-100 mb-3" onclick="addRow()">+ Thêm dòng hàng</button>
 
     <div class="row g-2 mb-3">
-      <div class="col-6">
+      <div class="col-12 col-sm-6">
         <label class="form-label">Cước vận chuyển</label>
         <input class="form-control" type="number" step="any" min="0" name="shippingCost" th:value="${form.shippingCost}">
       </div>
-      <div class="col-6">
+      <div class="col-12 col-sm-6">
         <label class="form-label">Đã trả NCC</label>
         <input class="form-control" type="number" step="any" min="0" name="paidAmount" th:value="${form.paidAmount}">
       </div>
@@ -63,6 +87,7 @@
 <script>
   let idx = document.querySelectorAll('.row-item').length;
   function addRow() {
+    if (document.querySelectorAll('.row-item').length >= 100) return;
     // Sao chép DOM đã được Thymeleaf escape, tránh tuần tự hóa entity/proxy Hibernate.
     const div = document.querySelector('.row-item').cloneNode(true);
     div.querySelectorAll('[name]').forEach(field => {
@@ -78,7 +103,16 @@
     document.getElementById('rows').appendChild(div);
     idx++;
   }
+  function removePurchaseRow(button) {
+    if (document.querySelectorAll('.row-item').length <= 1) return;
+    button.closest('.row-item').remove();
+    document.querySelectorAll('.row-item').forEach((row, index) => row.querySelectorAll('[name]').forEach(field => {
+      field.name = field.name.replace(/\[\d+\]/, `[${index}]`);
+    }));
+    idx = document.querySelectorAll('.row-item').length;
+  }
 </script>
+<script defer th:src="@{/js/purchase-entry.js}"></script>
 <nav th:replace="~{fragments :: nav}"></nav>
 </body>
 </html>

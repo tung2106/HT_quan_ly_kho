@@ -16,6 +16,11 @@ public class HomeController {
         return "home";
     }
 
+    @GetMapping("/stock/lots")
+    public String lots(Model m) {
+        m.addAttribute("lots", stockService.lots(true));
+        return "stock-lots";
+    }
     @GetMapping("/stock")
     public String stock(Model m) {
         m.addAttribute("rows", stockService.findAll());

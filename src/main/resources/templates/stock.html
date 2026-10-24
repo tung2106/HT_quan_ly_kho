@@ -4,8 +4,8 @@
 <body>
 <div class="container py-3">
   <h5 class="mb-3">Tồn kho</h5>
-  <div class="d-flex gap-2 mb-3"><a class="btn btn-outline-secondary" th:if="${isOwner}" th:href="@{/categories}">Danh mục</a><a class="btn btn-outline-secondary" th:if="${isOwner}" th:href="@{/suppliers}">Nhà cung cấp</a></div>
-  <div th:replace="~{fragments :: alerts}"></div>
+  <div class="d-flex gap-2 mb-3"><a class="btn btn-outline-secondary" th:href="@{/products}">Sản phẩm</a><a class="btn btn-outline-secondary" th:if="${isOwner}" th:href="@{/suppliers}">Nhà cung cấp</a></div>
+  <a th:if="${isOwner}" class="btn btn-outline-primary mb-3" th:href="@{/stock/lots}">Xem các lô còn tồn</a><div th:replace="~{fragments :: alerts}"></div>
   <div class="text-muted" th:if="${#lists.isEmpty(rows)}">Chưa có sản phẩm. Hãy thêm sản phẩm rồi nhập hàng.</div>
   <div class="table-responsive" th:unless="${#lists.isEmpty(rows)}">
     <table class="table table-sm align-middle">
@@ -13,10 +13,11 @@
       <tbody>
         <tr th:each="r : ${rows}" th:classappend="${r.lowStock()} ? 'table-danger'">
           <td><span th:text="${r.name()}"></span>
+              <span class="badge bg-secondary" th:if="${!r.active()}">Ngừng kinh doanh</span>
               <span class="badge bg-danger" th:if="${r.lowStock()}">Sắp hết</span></td>
           <td class="text-end text-nowrap"><span th:text="${r.qtyOnHand().stripTrailingZeros().toPlainString()}"></span> <small th:text="${r.baseUnit()}"></small></td>
-          <td th:if="${isOwner}" class="text-end" th:text="${#numbers.formatDecimal(r.avgCost(),1,'POINT',0,'COMMA')}"></td>
-          <td th:if="${isOwner}" class="text-end" th:text="${#numbers.formatDecimal(r.value(),1,'POINT',0,'COMMA')}"></td>
+          <td th:if="${isOwner}" class="text-end" th:text="${#numbers.formatDecimal(r.avgCost(),1,'POINT',0,'COMMA')} + ' VNĐ'"></td>
+          <td th:if="${isOwner}" class="text-end" th:text="${#numbers.formatDecimal(r.value(),1,'POINT',0,'COMMA')} + ' VNĐ'"></td>
         </tr>
       </tbody>
     </table>

@@ -31,6 +31,29 @@ class PurchasePostgresTest {
     @Autowired EntityManager entityManager;
 
     @Test
+    void nhapNongSanQuaFormBaCachVaGiuLaiDuLieuSai() throws Exception {
+        String url=mvc.perform(post("/products").with(csrf()).param("productGroup","AGRICULTURE")
+                .param("name","Nông sản biểu mẫu").param("baseUnit","kg").param("active","true"))
+                .andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
+        Long p=Long.valueOf(url.split("/")[2]);
+        for (String mode : new String[]{"WEIGHT","BAGS","LOT"}) {
+            mvc.perform(post("/purchases").with(csrf()).param("items[0].productId",p.toString())
+                    .param("items[0].unit","kg").param("items[0].entryMode",mode)
+                    .param("items[0].qty","3").param("items[0].unitPrice","10")
+                    .param("items[0].bagWeights","1\n2").param("items[0].lotAmount","30"))
+                    .andExpect(redirectedUrl("/purchases"));
+        }
+        entityManager.flush();
+        assertDecimal("SELECT qty_on_hand FROM v_stock WHERE product_id=?",p,"9");
+        assertDecimal("SELECT SUM(line_amount) FROM purchase_item WHERE product_id=?",p,"90");
+        mvc.perform(post("/purchases").with(csrf()).param("items[0].productId",p.toString())
+                .param("items[0].entryMode","BAGS").param("items[0].unit","kg")
+                .param("items[0].bagWeights","0\n2").param("items[0].unitPrice","10"))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("0\n2")));
+        mvc.perform(get(url)).andExpect(status().isOk()).andExpect(content().string(containsString("Nông sản")));
+    }
+
+    @Test
     void taoSanPhamQuyDoiNhapKhoVaRenderTatCaTrang() throws Exception {
         String categoryName = "Xi măng kiểm thử " + UUID.randomUUID();
         mvc.perform(post("/categories").with(csrf()).param("name", categoryName))

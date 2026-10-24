@@ -36,13 +36,15 @@ public class PurchaseService {
     private final StockTransactionRepository txRepo;
     private final JdbcTemplate jdbc;
 
-    private record Line(Product product, BigDecimal baseQty, BigDecimal baseCost, BigDecimal value) {}
+    private record Line(Product product, BigDecimal baseQty, BigDecimal baseCost, BigDecimal value, String mode, String bags) {}
 
     @Transactional
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('OWNER')")
     public PurchaseOrder create(PurchaseForm f) {
+        if (f.getItems() == null || f.getItems().size() > 100)
+            throw new IllegalArgumentException("Mỗi phiếu tối đa 100 dòng hàng");
         List<PurchaseItemForm> rows = f.getItems().stream()
-                .filter(i -> i.getProductId() != null || i.getQty() != null || i.getUnitPrice() != null)
+                .filter(i -> i.getProductId() != null || i.getQty() != null || i.getUnitPrice() != null || i.getLotAmount() != null || (i.getBagWeights() != null && !i.getBagWeights().isBlank()))
                 .toList();
         if (rows.isEmpty()) {
             throw new IllegalArgumentException("Cần ít nhất một dòng hàng có số lượng > 0");
@@ -56,6 +58,13 @@ public class PurchaseService {
         for (PurchaseItemForm r : rows) {
             Product p = locked.get(r.getProductId());
             if (p == null || !p.isActive()) throw new IllegalArgumentException("Hãy chọn sản phẩm đang sử dụng");
+            if (p.isAgriculture()) {
+                if (!"kg".equals(p.getBaseUnit())) throw new IllegalArgumentException("Nông sản cần đơn vị gốc kg");
+                var result = AgriculturePurchase.calculate(r);
+                lines.add(new Line(p, result.qty(), result.cost(), result.amount(), r.getEntryMode(), result.bags()));
+                continue;
+            }
+            if (!"WEIGHT".equals(r.getEntryMode())) throw new IllegalArgumentException("Vật liệu xây dựng dùng số lượng và đơn giá theo đơn vị đã chọn");
             if (r.getUnitPrice() == null || r.getUnitPrice().signum() < 0) {
                 throw new IllegalArgumentException("Thiếu đơn giá cho: " + p.getName());
             }
@@ -63,7 +72,7 @@ public class PurchaseService {
             BigDecimal baseQty = InventoryMath.quantity(r.getQty(), factor);
             InventoryMath.price(r.getUnitPrice());
             BigDecimal baseCost = r.getUnitPrice().divide(factor, 4, RoundingMode.HALF_UP);
-            lines.add(new Line(p, baseQty, baseCost, r.getQty().multiply(r.getUnitPrice())));
+            lines.add(new Line(p, baseQty, baseCost, r.getQty().multiply(r.getUnitPrice()), "WEIGHT", null));
         }
 
         PurchaseOrder order = new PurchaseOrder();
@@ -86,18 +95,21 @@ public class PurchaseService {
 
         for (Line l : lines) {
             BigDecimal share = totalValue.signum() > 0
-                    ? shipping.multiply(l.value()).divide(totalValue, 4, RoundingMode.HALF_UP)
-                    : shipping.divide(BigDecimal.valueOf(lines.size()), 4, RoundingMode.HALF_UP);
+                    ? shipping.multiply(l.value()).divide(totalValue, 12, RoundingMode.HALF_UP)
+                    : shipping.divide(BigDecimal.valueOf(lines.size()), 12, RoundingMode.HALF_UP);
             BigDecimal landed = l.baseCost()
-                    .add(share.divide(l.baseQty(), 4, RoundingMode.HALF_UP))
-                    .setScale(2, RoundingMode.HALF_UP);
+                    .add(share.divide(l.baseQty(), 12, RoundingMode.HALF_UP))
+                    .setScale(l.product().isAgriculture() ? 12 : 2, RoundingMode.HALF_UP);
             landedCosts.add(landed);
 
             PurchaseItem item = new PurchaseItem();
             item.setOrder(order);
             item.setProduct(l.product());
             item.setQty(l.baseQty());
-            item.setUnitCost(l.baseCost().setScale(2, RoundingMode.HALF_UP));
+            item.setUnitCost(l.baseCost().setScale(l.product().isAgriculture() ? 12 : 2, RoundingMode.HALF_UP));
+            item.setEntryMode(l.mode());
+            item.setBagWeights(l.bags());
+            item.setLineAmount(l.value());
             order.getItems().add(item);
         }
         orderRepo.save(order);

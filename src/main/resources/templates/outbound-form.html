@@ -17,26 +17,35 @@
         <label class="form-label">Sản phẩm</label>
         <select class="form-select mb-2" th:name="|items[${s.index}].productId|">
           <option value="">-- Chọn sản phẩm --</option>
-          <option th:each="p : ${products}" th:value="${p.id}" th:text="|${p.name} (${p.baseUnit})|" th:selected="${it.productId == p.id}"></option>
+          <option th:each="p : ${products}" th:value="${p.id}" th:attr="data-group=${p.productGroup}" th:text="|${p.name} (${p.baseUnit})|" th:selected="${it.productId == p.id}"></option>
         </select>
-        <label class="form-label">Số lượng</label>
-        <input class="form-control mb-2" type="number" min="0" step="any" th:name="|items[${s.index}].qty|" th:value="${it.qty}">
+        <div th:if="${form.kind == 'SALE'}">
+<label class="form-label">Lô xuất bán</label>
+<select class="form-select mb-2 batch-select" aria-label="Lô xuất bán" th:name="|items[${s.index}].batchId|">
+<option value="">Tự động: lô nhập trước</option>
+<option th:each="b : ${lots}" th:if="${b.active}" th:value="${b.id}" th:attr="data-product-id=${b.product_id}" th:selected="${it.batchId == b.id}" th:text="|Lô #${b.id} · ${b.received_date} · còn ${b.qty_left.stripTrailingZeros().toPlainString()} ${b.base_unit}|"></option>
+</select>
+<small class="d-block mb-2">Bán từ nhiều lô: thêm dòng cùng sản phẩm và chọn từng lô. Số còn lại tính theo đơn vị gốc.</small>
+</div>
+<label class="form-label">Số lượng</label>
+        <input class="form-control mb-2" type="number" min="0" step="any" th:name="|items[${s.index}].qty|" th:value="${it.qty == null ? null : it.qty.stripTrailingZeros().toPlainString()}">
         <label class="form-label">Đơn vị</label>
         <select class="form-select mb-2 unit-select" aria-label="Đơn vị" th:name="|items[${s.index}].unit|">
           <option value="">Chọn đơn vị</option>
           <option th:each="u : ${unitOptions}" th:value="${u.unit}" th:text="${u.label}" th:attr="data-product-id=${u.productId}"
                   th:selected="${it.productId == u.productId and it.unit == u.unit}"></option>
         </select>
-        <label th:if="${form.kind == 'SALE'}" class="form-label">Giá bán thực tế / đơn vị đã nhập (đ)</label>
+        <p class="small text-muted agriculture-conversion mb-2" hidden>1 tấn = 1000 kg · 1 tạ = 100 kg · 1 yến = 10 kg.<br>Ví dụ: 1,5 tấn = 1500 kg. Hãy nhập số lượng theo kg thực tế.</p>
+        <label th:if="${form.kind == 'SALE'}" class="form-label">Giá bán thực tế / đơn vị đã nhập (VNĐ)</label>
         <input th:if="${form.kind == 'SALE'}" class="form-control" type="number" min="0" step="0.01" th:name="|items[${s.index}].unitPrice|" th:value="${it.unitPrice}">
         <button type="button" class="btn btn-outline-secondary mt-2" onclick="removeRow(this)">Xóa dòng</button>
       </div>
     </div>
     <button type="button" class="btn btn-outline-primary w-100 mb-3" onclick="addRow()">+ Thêm sản phẩm</button>
     <div th:if="${form.kind == 'SALE'}" class="mb-3">
-      <label for="paid" class="form-label">Tiền đã thu (đ); để 0 nếu chưa thu</label>
+      <label for="paid" class="form-label">Số tiền khách hàng đã trả</label>
       <input id="paid" class="form-control" name="paidAmount" type="number" step="1" min="0" th:value="${form.paidAmount}">
-      <small>Tổng tiền được cộng tất cả dòng rồi làm tròn đến 1 đồng.</small>
+      <small>Nhập số tiền thực nhận cho phiếu này; để 0 nếu khách chưa trả. Phần còn thiếu được ghi công nợ, cần có tên khách hàng. Tổng tiền hàng được cộng tất cả dòng rồi làm tròn đến 1 đồng.</small>
     </div>
     <label for="note" class="form-label" th:text="${form.kind == 'WASTE' ? 'Lý do hao hụt (bắt buộc)' : 'Ghi chú'}"></label>
     <textarea id="note" class="form-control mb-3" name="note" th:required="${form.kind == 'WASTE'}" th:text="${form.note}"></textarea>
@@ -61,4 +70,4 @@
     else button.closest('.row-item').querySelectorAll('input,select').forEach(field => { field.value = ''; });
     renumber();
   }
-</script><nav th:replace="~{fragments :: nav}"></nav></body></html>
+</script><script defer th:src="@{/js/batch-select.js}"></script><nav th:replace="~{fragments :: nav}"></nav></body></html>

@@ -16,9 +16,33 @@ public class SupplierController {
     private final com.vatlieu.service.SupplierService service;
 
     @GetMapping
-    public String list(Model m) {
-        m.addAttribute("suppliers", repo.findByActiveTrueOrderByNameAsc());
+    public String list(@RequestParam(defaultValue="false") boolean deleted,
+                       @RequestParam(defaultValue="") String keyword, Model m) {
+        m.addAttribute("deleted", deleted);
+        m.addAttribute("keyword", keyword.trim());
+        m.addAttribute("suppliers", service.search(!deleted, keyword));
         return "suppliers";
+    }
+
+    @PostMapping("/{id}/edit")
+    public String edit(@PathVariable long id, @RequestParam String name,
+                       @RequestParam(defaultValue="") String phone,
+                       @RequestParam(defaultValue="false") boolean deleted, RedirectAttributes ra) {
+        try { service.edit(id, name, phone); ra.addFlashAttribute("msg", "Đã cập nhật nhà cung cấp"); }
+        catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            ra.addFlashAttribute("editId", id);
+            ra.addFlashAttribute("editName", name);
+            ra.addFlashAttribute("editPhone", phone);
+        }
+        return deleted ? "redirect:/suppliers?deleted=true" : "redirect:/suppliers";
+    }
+
+    @PostMapping("/{id}/restore")
+    public String restore(@PathVariable long id, RedirectAttributes ra) {
+        try { service.restore(id); ra.addFlashAttribute("msg", "Đã khôi phục nhà cung cấp. Bạn có thể chọn khi nhập hàng mới."); }
+        catch (IllegalArgumentException e) { ra.addFlashAttribute("error", e.getMessage()); }
+        return "redirect:/suppliers?deleted=true";
     }
 
     @PostMapping("/{id}/delete")

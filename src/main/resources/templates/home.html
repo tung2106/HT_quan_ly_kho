@@ -21,10 +21,9 @@
     <a class="home-tile" th:if="${isOwner}" th:href="@{/outbound/new(kind='WASTE')}"><span class="home-icon">🍂</span><strong>Hao hụt</strong><span>Ghi hàng hỏng hoặc thiếu</span></a>
     <a class="home-tile home-wide" th:if="${isOwner}" th:href="@{/capital}"><span class="home-icon">₫</span><strong>Vốn &amp; công nợ</strong><span>Xem vốn tồn, ghi thu khách và trả nhà cung cấp</span></a>
   </div>
-  <h2 class="h5 mt-4 mb-3">Danh mục &amp; lịch sử</h2>
+  <h2 class="h5 mt-4 mb-3">Hàng hóa &amp; lịch sử</h2>
   <div class="home-grid">
-    <a class="home-tile" th:href="@{/products}"><span class="home-icon">🏷️</span><strong>Sản phẩm</strong><span>Giá bán, đơn vị và quy đổi</span></a>
-    <a class="home-tile" th:if="${isOwner}" th:href="@{/categories}"><span class="home-icon">🗂️</span><strong>Danh mục</strong><span>Phân nhóm các mặt hàng</span></a>
+    <a class="home-tile" th:href="@{/products}"><span class="home-icon">🏷️</span><strong>Sản phẩm</strong><span>Vật liệu xây dựng và nông sản</span></a>
     <a class="home-tile" th:if="${isOwner}" th:href="@{/suppliers}"><span class="home-icon">🤝</span><strong>Nhà cung cấp</strong><span>Thông tin người giao hàng</span></a>
     <a class="home-tile" th:if="${isOwner}" th:href="@{/purchases}"><span class="home-icon">📋</span><strong>Phiếu nhập</strong><span>Xem lại các lần nhập hàng</span></a>
     <a class="home-tile home-wide" th:href="@{/outbound}"><span class="home-icon">🧾</span><strong th:text="${isOwner ? 'Phiếu xuất & hao hụt' : 'Phiếu bán của tôi'}"></strong><span>Xem lại các phiếu được phép truy cập</span></a>

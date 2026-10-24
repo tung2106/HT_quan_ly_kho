@@ -16,6 +16,7 @@ import java.util.UUID;
 @Controller @RequiredArgsConstructor
 public class OperationsController {
     private final OperationsService service;
+    private final com.vatlieu.service.StockService stock;
     private final com.vatlieu.service.CurrentUser current;
     private final com.vatlieu.service.UnitOptionsService units;
     private final ProductRepository products;
@@ -30,6 +31,7 @@ public class OperationsController {
         form.getItems().add(new PurchaseItemForm());
         model.addAttribute("form",form);
         model.addAttribute("unitOptions",units.findAll());
+        model.addAttribute("lots",stock.lots(current.owner()));
         model.addAttribute("products",products.findByActiveTrueOrderByNameAsc());
         return "outbound-form";
     }
@@ -41,6 +43,7 @@ public class OperationsController {
         } catch (IllegalArgumentException e) {
             model.addAttribute("error",e.getMessage());
             model.addAttribute("unitOptions",units.findAll());
+        model.addAttribute("lots",stock.lots(current.owner()));
             model.addAttribute("products",products.findByActiveTrueOrderByNameAsc());
             if (form.getItems().isEmpty()) form.getItems().add(new PurchaseItemForm());
             return "outbound-form";
