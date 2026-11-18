@@ -74,6 +74,9 @@ và ngôn ngữ theo thiết lập thiết bị; không tự viết combobox/cal
   Chặn xóa nếu đã trả tiền, xuất bán hoặc ghi hao hụt từ lô. Khi xóa, ghi đối ứng từng lô,
   tính lại vốn và bỏ khoản phải trả. Khôi phục dùng lại phiếu, ngày nhập, mã lô và giá vốn gốc.
   Thùng rác có tìm kiếm, xem chi tiết và khôi phục.
+- Ở lịch sử xuất, chỉ quản lý được chuyển phiếu bán chưa thu tiền vào Thùng rác sau khi xác nhận.
+  Hàng trở về đúng các lô đã xuất, phiếu rời doanh thu, giá vốn đã bán và công nợ.
+  Khôi phục chỉ thành công khi từng lô gốc còn đủ số lượng. Nhân viên chỉ thấy phiếu đang sử dụng của mình.
 - Trang có một h1 và một vùng main; form cuộn tự nhiên, thanh dưới không che nút cuối.
 - Bảng tồn giữ quan hệ các cột và cuộn ngang trong vùng có tên; không giấu giá trị.
 - Hàng còn và Các lô còn tồn dùng cùng bộ lọc native Tất cả/Vật liệu xây dựng/Nông sản,

@@ -32,6 +32,9 @@ class OperationsPostgresTest {
   OperationsService service;
 
   @Autowired
+  SaleTrashService saleTrash;
+
+  @Autowired
   PurchaseService purchases;
 
   @Autowired
@@ -358,6 +361,105 @@ class OperationsPostgresTest {
 
   private void decimal(String sql, long id, String expected) {
     assertThat(jdbc.queryForObject(sql, BigDecimal.class, id)).isEqualByComparingTo(expected);
+  }
+
+  @Test
+  void khoiPhucDungLoSoLuongVaGiaVonBanBanDau() {
+    long product = product();
+    receive(product, "1.125", "100", "0");
+    receive(product, "2", "400", "0");
+    var baseline = service.summary();
+    var sale = sale(product, "1", "600");
+    sale.getItems().add(row(product, "0.625", "kg", "600"));
+    long id = service.create(sale);
+    var sold = service.summary();
+    var lots = jdbc.queryForList(
+      "SELECT id FROM batch WHERE product_id=? ORDER BY id",
+      Long.class,
+      product
+    );
+    decimal("SELECT qty_left FROM batch WHERE id=?", lots.get(0), "0");
+    decimal("SELECT qty_left FROM batch WHERE id=?", lots.get(1), "1.5");
+    for (int i = 0; i < 2; i++) saleTrash.setTrashed(id, true);
+    var afterTrash = service.summary();
+    baseline.forEach((key, v) ->
+      assertThat((BigDecimal) afterTrash.get(key)).isEqualByComparingTo((BigDecimal) v)
+    );
+    decimal("SELECT qty_left FROM batch WHERE id=?", lots.get(0), "1.125");
+    decimal("SELECT qty_left FROM batch WHERE id=?", lots.get(1), "2");
+    decimal("SELECT qty_on_hand FROM v_stock WHERE product_id=?", product, "3.125");
+    decimal("SELECT avg_cost FROM product WHERE id=?", product, "292");
+    assertThat(service.debts()).noneMatch(
+      d -> "sale".equals(d.get("type")) && d.get("id").equals(id)
+    );
+    assertThatThrownBy(() ->
+      service.pay("sale", id, n("1"), UUID.randomUUID(), "")
+    ).hasMessageContaining("Thùng rác");
+    for (int i = 0; i < 2; i++) saleTrash.setTrashed(id, false);
+    var restored = service.summary();
+    sold.forEach((key, v) ->
+      assertThat((BigDecimal) restored.get(key)).isEqualByComparingTo((BigDecimal) v)
+    );
+    decimal("SELECT qty_left FROM batch WHERE id=?", lots.get(0), "0");
+    decimal("SELECT qty_on_hand FROM v_stock WHERE product_id=?", product, "1.5");
+    decimal("SELECT avg_cost FROM product WHERE id=?", product, "400");
+    decimal("SELECT cost_amount FROM outbound_order WHERE id=?", id, "312.5");
+    decimal(
+      "SELECT COUNT(*) FROM stock_transaction WHERE ref_id=? AND tx_type='ADJUSTMENT'",
+      id,
+      "4"
+    );
+    assertThat(service.debts()).anyMatch(
+      d -> "sale".equals(d.get("type")) && d.get("id").equals(id)
+    );
+  }
+
+  @Test
+  void thieuMotLoKhongTuLayLoKhacVaKhongTruDoDang() {
+    long p = product();
+    receive(p, "1", "100", "0");
+    receive(p, "2", "200", "0");
+    long original = service.create(sale(p, "3", "500"));
+    saleTrash.setTrashed(original, true);
+    var lots = jdbc.queryForList(
+      "SELECT id FROM batch WHERE product_id=? ORDER BY id",
+      Long.class,
+      p
+    );
+    var replacement = sale(p, "1.25", "500");
+    replacement.getItems().get(0).setBatchId(lots.get(1));
+    service.create(replacement);
+    receive(p, "10", "300", "0");
+    var before = service.summary();
+    assertThatThrownBy(() -> saleTrash.setTrashed(original, false)).hasMessageContaining(
+      "không còn đủ hàng"
+    );
+    assertThat(service.detail(original).get("trashed")).isEqualTo(true);
+    assertThat(service.summary()).isEqualTo(before);
+    decimal("SELECT qty_left FROM batch WHERE id=?", lots.get(0), "1");
+    decimal("SELECT qty_left FROM batch WHERE id=?", lots.get(1), "0.75");
+  }
+
+  @Test
+  void chanXoaPhieuDaThuTienVaPhieuHaoHut() {
+    long p = product();
+    receive(p, "6", "100", "0");
+    var paid = sale(p, "1", "250");
+    paid.setSettleAll(true);
+    long full = service.create(paid);
+    long partial = service.create(sale(p, "1", "250"));
+    service.pay("sale", partial, n("1"), UUID.randomUUID(), "Thu một phần");
+    var waste = sale(p, "1", "0");
+    waste.setKind("WASTE");
+    waste.setNote("Hỏng");
+    long wasteId = service.create(waste);
+    for (long id : new long[] { full, partial })
+      assertThatThrownBy(() -> saleTrash.setTrashed(id, true)).hasMessageContaining("đã thu tiền");
+    assertThatThrownBy(() -> saleTrash.setTrashed(wasteId, true)).hasMessageContaining(
+      "Không tìm thấy phiếu xuất bán"
+    );
+    decimal("SELECT qty_on_hand FROM v_stock WHERE product_id=?", p, "3");
+    assertThat(service.orders("", true)).isEmpty();
   }
 
   @Test

@@ -254,8 +254,9 @@ public class OperationsService {
     );
     if (found.isEmpty()) throw new IllegalArgumentException("Không tìm thấy phiếu");
     Map<String, Object> order = found.get(0);
-    if (purchase && Boolean.TRUE.equals(order.get("trashed"))) throw new IllegalArgumentException(
-      "Phiếu nhập đang ở Thùng rác. Khôi phục phiếu trước khi thanh toán."
+    if (Boolean.TRUE.equals(order.get("trashed"))) throw new IllegalArgumentException(
+      (purchase ? "Phiếu nhập" : "Phiếu bán") +
+        " đang ở Thùng rác. Khôi phục phiếu trước khi thanh toán."
     );
     if (!purchase && !"SALE".equals(order.get("kind"))) throw new IllegalArgumentException(
       "Phiếu hao hụt không thu tiền"
@@ -280,17 +281,29 @@ public class OperationsService {
   }
 
   public List<Map<String, Object>> orders() {
-    if (!current.owner()) return jdbc.queryForList(
-      "SELECT id,kind,created_at,customer,note,total_amount,paid_amount FROM outbound_order WHERE kind='SALE' AND created_by=? ORDER BY id DESC",
+    return orders("", false);
+  }
+
+  private List<Map<String, Object>> visibleOrders(boolean trash) {
+    if (trash) current.requireOwner();
+    if (!trash && !current.owner()) return jdbc.queryForList(
+      "SELECT id,kind,created_at,customer,note,total_amount,paid_amount FROM outbound_order WHERE kind='SALE' AND NOT trashed AND created_by=? ORDER BY id DESC",
       current.id()
     );
-    return jdbc.queryForList("SELECT * FROM outbound_order ORDER BY id DESC");
+    return jdbc.queryForList(
+      "SELECT * FROM outbound_order WHERE trashed=? ORDER BY id DESC",
+      trash
+    );
   }
 
   public List<Map<String, Object>> orders(String keyword) {
+    return orders(keyword, false);
+  }
+
+  public List<Map<String, Object>> orders(String keyword, boolean trash) {
     String query = SearchText.normalize(keyword);
     // Lọc sau truy vấn theo quyền, nhân viên không thấy phiếu của người khác.
-    return orders()
+    return visibleOrders(trash)
       .stream()
       .filter(
         order ->
@@ -311,9 +324,11 @@ public class OperationsService {
     boolean owner = current.owner();
     if (
       !owner &&
-      (!"SALE".equals(order.get("kind")) || !Objects.equals(order.get("created_by"), current.id()))
+      (Boolean.TRUE.equals(order.get("trashed")) ||
+        !"SALE".equals(order.get("kind")) ||
+        !Objects.equals(order.get("created_by"), current.id()))
     ) throw new org.springframework.security.access.AccessDeniedException(
-      "Bạn chỉ được xem phiếu bán do mình tạo"
+      "Bạn chỉ được xem phiếu bán đang sử dụng do mình tạo"
     );
     order.put(
       "items",
@@ -340,7 +355,7 @@ public class OperationsService {
     return jdbc.queryForList(
       """
       SELECT 'sale' AS type,id,COALESCE(NULLIF(TRIM(customer),''),'Khách lẻ') AS partner,total_amount,paid_amount,total_amount-paid_amount AS remaining
-      FROM outbound_order WHERE kind='SALE'
+      FROM outbound_order WHERE kind='SALE' AND NOT trashed
       UNION ALL
       SELECT 'purchase',o.id,COALESCE(NULLIF(TRIM(o.seller_name),''),s.name,'Chưa ghi tên'),o.total_amount,o.paid_amount,o.total_amount-o.paid_amount
       FROM purchase_order o LEFT JOIN supplier s ON s.id=o.supplier_id
@@ -407,12 +422,12 @@ public class OperationsService {
       """
       SELECT
       (SELECT COALESCE(SUM(qty_left*unit_cost),0) FROM batch) AS inventory,
-      (SELECT COALESCE(SUM(total_amount),0) FROM outbound_order WHERE kind='SALE') AS revenue,
-      (SELECT COALESCE(SUM(cost_amount),0) FROM outbound_order WHERE kind='SALE') AS sold_cost,
+      (SELECT COALESCE(SUM(total_amount),0) FROM outbound_order WHERE kind='SALE' AND NOT trashed) AS revenue,
+      (SELECT COALESCE(SUM(cost_amount),0) FROM outbound_order WHERE kind='SALE' AND NOT trashed) AS sold_cost,
       (SELECT COALESCE(SUM(cost_amount),0) FROM outbound_order WHERE kind='WASTE') AS waste,
       (SELECT COALESCE(SUM(amount),0) FROM cash_payment WHERE outbound_id IS NOT NULL) AS receipts,
       (SELECT COALESCE(SUM(amount),0) FROM cash_payment WHERE purchase_id IS NOT NULL) AS payments,
-      (SELECT COALESCE(SUM(total_amount-paid_amount),0) FROM outbound_order WHERE kind='SALE') AS receivable,
+      (SELECT COALESCE(SUM(total_amount-paid_amount),0) FROM outbound_order WHERE kind='SALE' AND NOT trashed) AS receivable,
       (SELECT COALESCE(SUM(total_amount-paid_amount),0) FROM purchase_order WHERE NOT trashed) AS payable
       """
     );

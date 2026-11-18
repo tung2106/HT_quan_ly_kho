@@ -1,11 +1,29 @@
 <!doctype html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-  <head th:replace="~{fragments :: head('Xuất kho')}"></head>
+  <head th:replace="~{fragments :: head(${trash ? 'Thùng rác phiếu bán' : 'Xuất kho'})}"></head>
   <body>
     <main class="container py-3">
-      <h1 class="h5">Hàng đã bán &amp; xuất</h1>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1
+          class="h5 mb-0"
+          th:text="${trash ? 'Thùng rác phiếu bán' : 'Hàng đã bán &amp; xuất'}"
+        ></h1>
+        <a
+          th:if="${isOwner and !trash}"
+          class="btn btn-outline-secondary"
+          th:href="@{/outbound(trash=true)}"
+        >
+          Thùng rác
+        </a>
+        <a th:if="${trash}" class="btn btn-outline-secondary" th:href="@{/outbound}">
+          Lịch sử xuất
+        </a>
+      </div>
       <div th:replace="~{fragments :: alerts}"></div>
-      <div class="d-flex gap-2 mb-3">
+      <p th:if="${trash}" class="text-muted">
+        Khôi phục phiếu sẽ xuất lại hàng từ đúng các lô cũ và ghi lại doanh thu, giá vốn, công nợ.
+      </p>
+      <div th:unless="${trash}" class="d-flex gap-2 mb-3">
         <a class="btn btn-primary flex-fill" th:href="@{/outbound/new}">+ Xuất bán</a>
         <a
           th:if="${isOwner}"
@@ -16,6 +34,7 @@
         </a>
       </div>
       <form novalidate method="get" th:action="@{/outbound}" class="card card-body mb-3">
+        <input th:if="${trash}" type="hidden" name="trash" value="true" />
         <label class="form-label" for="outbound-search">Tìm người nhận hoặc mã phiếu</label>
         <input
           id="outbound-search"
@@ -28,37 +47,68 @@
       </form>
       <p
         th:if="${#lists.isEmpty(orders)}"
-        th:text="${#strings.isEmpty(keyword) ? 'Chưa có phiếu xuất.' : 'Không tìm thấy phiếu xuất phù hợp.'}"
+        th:text="${!#strings.isEmpty(keyword) ? 'Không tìm thấy phiếu xuất phù hợp.' : (trash ? 'Thùng rác chưa có phiếu bán.' : 'Chưa có phiếu xuất.')}"
       ></p>
-      <a
-        class="card card-body mb-2 text-decoration-none"
-        th:each="o : ${orders}"
-        th:href="@{/outbound/{id}(id=${o.id})}"
-      >
-        <strong th:text="|#${o.id} — ${o.kind == 'SALE' ? 'Xuất bán' : 'Hao hụt'}|"></strong>
-        <span th:text="${o.created_at}"></span>
-        <span
-          th:if="${o.kind == 'SALE'}"
-          th:text="|Người nhận: ${#strings.isEmpty(o.customer) ? 'Khách lẻ' : o.customer}|"
-        ></span>
-        <span
-          th:if="${o.kind == 'SALE'}"
-          th:text="|Tiền bán: ${#numbers.formatDecimal(o.total_amount,1,'POINT',0,'COMMA')} VNĐ|"
-        ></span>
-        <span
-          th:if="${o.kind == 'SALE'}"
-          th:text="|Đã thu: ${#numbers.formatDecimal(o.paid_amount,1,'POINT',0,'COMMA')} VNĐ|"
-        ></span>
-        <span
-          class="text-danger"
-          th:if="${o.kind == 'SALE' and o.total_amount.compareTo(o.paid_amount) > 0}"
-          th:text="|Còn nợ: ${#numbers.formatDecimal(o.total_amount.subtract(o.paid_amount),1,'POINT',0,'COMMA')} VNĐ|"
-        ></span>
-        <span
-          th:if="${o.kind == 'WASTE'}"
-          th:text="|Giá vốn hao hụt: ${#numbers.formatDecimal(o.cost_amount,1,'POINT',0,'COMMA')} VNĐ|"
-        ></span>
-      </a>
+      <article class="card card-body mb-2" th:each="o : ${orders}">
+        <a class="d-flex flex-column text-decoration-none" th:href="@{/outbound/{id}(id=${o.id})}">
+          <strong th:text="|#${o.id} — ${o.kind == 'SALE' ? 'Xuất bán' : 'Hao hụt'}|"></strong>
+          <span th:text="${o.created_at}"></span>
+          <span
+            th:if="${o.kind == 'SALE'}"
+            th:text="|Người nhận: ${#strings.isEmpty(o.customer) ? 'Khách lẻ' : o.customer}|"
+          ></span>
+          <span
+            th:if="${o.kind == 'SALE'}"
+            th:text="|Tiền bán: ${#numbers.formatDecimal(o.total_amount,1,'POINT',0,'COMMA')} VNĐ|"
+          ></span>
+          <span
+            th:if="${o.kind == 'SALE'}"
+            th:text="|Đã thu: ${#numbers.formatDecimal(o.paid_amount,1,'POINT',0,'COMMA')} VNĐ|"
+          ></span>
+          <span
+            class="text-danger"
+            th:if="${!trash and o.kind == 'SALE' and o.total_amount.compareTo(o.paid_amount) > 0}"
+            th:text="|Còn nợ: ${#numbers.formatDecimal(o.total_amount.subtract(o.paid_amount),1,'POINT',0,'COMMA')} VNĐ|"
+          ></span>
+          <span
+            th:if="${o.kind == 'WASTE'}"
+            th:text="|Giá vốn hao hụt: ${#numbers.formatDecimal(o.cost_amount,1,'POINT',0,'COMMA')} VNĐ|"
+          ></span>
+        </a>
+        <th:block
+          th:fragment="trashActions(o,trash,keyword)"
+          th:if="${isOwner and o.kind == 'SALE'}"
+        >
+          <form
+            novalidate
+            method="post"
+            class="mt-2"
+            th:if="${trash or o.paid_amount.signum() == 0}"
+            th:action="${trash} ? @{/outbound/{id}/restore(id=${o.id})} : @{/outbound/{id}/trash(id=${o.id})}"
+            th:attr="data-confirm=${trash ? null : 'Hàng sẽ được trả về các lô đã xuất. Doanh thu, giá vốn đã bán và công nợ khách hàng sẽ được tính lại. Bạn có thể khôi phục phiếu trong Thùng rác.'},data-confirm-title=|Chuyển phiếu bán #${o.id} vào Thùng rác?|"
+            data-confirm-action="Chuyển vào Thùng rác"
+          >
+            <input
+              th:if="${!#strings.isEmpty(keyword)}"
+              type="hidden"
+              name="keyword"
+              th:value="${keyword}"
+            />
+            <button
+              type="submit"
+              class="btn"
+              data-requires-confirmation
+              th:disabled="${!trash}"
+              th:classappend="${trash ? 'btn-outline-primary' : 'btn-outline-danger'}"
+              th:text="${trash ? 'Khôi phục phiếu' : 'Xóa phiếu'}"
+            ></button>
+            <noscript th:unless="${trash}">Bật JavaScript để xác nhận xóa phiếu.</noscript>
+          </form>
+          <small th:if="${!trash and o.paid_amount.signum() > 0}" class="text-muted d-block mt-2">
+            Phiếu đã thu tiền khách nên không thể xóa.
+          </small>
+        </th:block>
+      </article>
     </main>
     <nav th:replace="~{fragments :: nav}"></nav>
   </body>

@@ -4,6 +4,7 @@ import com.vatlieu.form.OutboundForm;
 import com.vatlieu.form.PurchaseItemForm;
 import com.vatlieu.repository.ProductRepository;
 import com.vatlieu.service.OperationsService;
+import com.vatlieu.service.SaleTrashService;
 import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -18,16 +19,44 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class OperationsController {
 
   private final OperationsService service;
+  private final SaleTrashService saleTrash;
   private final com.vatlieu.service.StockService stock;
   private final com.vatlieu.service.CurrentUser current;
   private final com.vatlieu.service.UnitOptionsService units;
   private final ProductRepository products;
 
   @GetMapping("/outbound")
-  public String list(@RequestParam(defaultValue = "") String keyword, Model model) {
-    model.addAttribute("orders", service.orders(keyword));
+  public String list(
+    @RequestParam(defaultValue = "") String keyword,
+    @RequestParam(defaultValue = "false") boolean trash,
+    Model model
+  ) {
+    model.addAttribute("orders", service.orders(keyword, trash));
+    model.addAttribute("trash", trash);
     model.addAttribute("keyword", keyword);
     return "outbound";
+  }
+
+  @PostMapping("/outbound/{id}/{action:trash|restore}")
+  public String changeTrash(
+    @PathVariable long id,
+    @PathVariable String action,
+    @RequestParam(defaultValue = "") String keyword,
+    RedirectAttributes flash
+  ) {
+    boolean trash = action.equals("trash");
+    try {
+      saleTrash.setTrashed(id, trash);
+      flash.addFlashAttribute(
+        "msg",
+        trash ? "Đã chuyển phiếu bán vào Thùng rác." : "Đã khôi phục phiếu bán."
+      );
+    } catch (IllegalArgumentException e) {
+      flash.addFlashAttribute("error", e.getMessage());
+    }
+    if (!trash) flash.addAttribute("trash", true);
+    if (!keyword.isBlank()) flash.addAttribute("keyword", keyword);
+    return "redirect:/outbound";
   }
 
   @GetMapping("/outbound/new")

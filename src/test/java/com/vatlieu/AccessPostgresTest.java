@@ -226,9 +226,21 @@ class AccessPostgresTest {
     long other = order("acl-b", "PRIVATE-OTHER-SALE", "SALE");
     long legacy = order(null, "LEGACY-PRIVATE", "SALE");
     long waste = order("acl-a", "WASTE-PRIVATE", "WASTE");
+    long inTrash = order("acl-a", "ARCHIVED-MY-SALE", "SALE");
+    jdbc.update("UPDATE outbound_order SET trashed=true WHERE id=?", inTrash);
+    mvc.perform(get("/outbound").param("trash", "true")).andExpect(status().isForbidden());
+    mvc.perform(get("/outbound/" + inTrash)).andExpect(status().isForbidden());
+    mvc
+      .perform(post("/outbound/" + mine + "/trash").with(csrf()))
+      .andExpect(status().isForbidden());
+    mvc
+      .perform(post("/outbound/" + inTrash + "/restore").with(csrf()))
+      .andExpect(status().isForbidden());
     mvc
       .perform(get("/outbound"))
       .andExpect(status().isOk())
+      .andExpect(content().string(not(containsString("/outbound/" + inTrash + "\""))))
+      .andExpect(content().string(not(containsString("Xóa phiếu"))))
       .andExpect(content().string(not(containsString("PRIVATE-OTHER-SALE"))))
       .andExpect(content().string(not(containsString("LEGACY-PRIVATE"))));
     mvc
