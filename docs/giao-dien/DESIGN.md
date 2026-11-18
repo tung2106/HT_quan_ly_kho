@@ -4,11 +4,11 @@ name: "Kho gia đình"
 description: "Sổ kho dễ đọc trên điện thoại, sắc xanh bầu trời và mặt giấy trắng."
 colors:
   primary: "#0868ac"
-  ink: "#173b56"
+  ink: "#203849"
   muted: "#526b7c"
-  background: "#edf6fb"
+  background: "#f3f7fa"
   surface: "#ffffff"
-  line: "#cbdde9"
+  line: "#d1dee7"
   success: "#17643d"
   danger: "#a32c36"
 typography:
@@ -93,18 +93,21 @@ Các ô nhập đơn giá, tổng tiền lô và tiền đã thu/trả dùng chu
 nền xanh, số tiền đậm và ô cao tối thiểu 52px. Cước vận chuyển dùng kiểu ô phụ.
 
 Max-width 1080px, lề điện thoại 14px, nhịp nội dung 8/12/16/24px.
-Trang chủ: tiêu đề và mèo → nhập/bán → ba số vốn/chi/thu → hàng còn và lô → vốn/nợ → lịch sử.
-Cài đặt ở góc phải thanh đầu trang, chứa giao diện và công cụ quản lý/tài khoản.
-Hao hụt vẫn ở luồng hàng hóa, không đưa giao dịch vào Cài đặt.
-Hai cột thao tác trên điện thoại; cụm hàng hóa có thể ba cột từ 768px.
-Khung Cài đặt dùng dialog native, mở bên phải, vừa màn hình nhỏ và cuộn nội dung khi cần.
-Thanh điều hướng dưới giữ tối đa 5 mục, vùng chạm ≥44px và safe-area.
+Trang chủ đặt Nhập hàng, Xuất bán và Ghi hao hụt ngay dưới tiêu đề và mèo.
+Kế tiếp là vốn, tiền đã chi, tiền đã thu, nhóm theo dõi hàng và liên kết tra cứu phiếu.
+Cài đặt mở từ góc phải. Hộp thoại chia thành Giao diện, Quản lý và Tài khoản.
+Trên màn hình dưới 900px, thanh chức năng nằm ở cạnh dưới, chừa khoảng trống cho thanh hệ thống.
+Từ 900px, cùng thanh chức năng nằm ở đầu trang, giữa tên cửa hàng và Cài đặt.
+Số mục hiển thị theo quyền, tối đa năm mục. Biểu tượng luôn đi cùng nhãn.
+Danh sách phiếu có một nút chính để ghi giao dịch. Ô tìm kiếm và nút Tìm nằm cạnh nhau.
+Phiếu nhập hiển thị ngay hàng, người bán, lô, tổng, số đã trả và nợ còn lại.
+Người dùng mở chi tiết để xem các dòng hàng hoặc xử lý phiếu trong Thùng rác.
 Form cuộn theo trang, không khóa chiều cao viewport. Bảng nhiều cột cuộn ngang trong
 khung riêng, có hướng dẫn; không ép toàn bộ trang tràn ngang hoặc giấu số liệu.
 
 ## Elevation & Depth
 
-Vùng nội dung dùng viền nhẹ; chỉ một bóng nhẹ cho thẻ và thanh điều hướng.
+Vùng nội dung dùng viền nhẹ. Hộp thoại nổi bật trên lớp nền phủ.
 Không áp hover như nút lên thẻ chỉ đọc. Mây không nhận click và không che nội dung.
 Dialog ở top layer, loading phủ trang nhưng có đường ẩn khi chờ quá lâu.
 

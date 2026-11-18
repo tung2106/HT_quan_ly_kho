@@ -2,6 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments :: head('Tồn kho')}"></head>
   <body>
+    <th:block th:replace="~{fragments :: shell(true)}"></th:block>
     <main class="container py-3">
       <h1 class="h4 mb-3" th:text="${isOwner ? 'Hàng còn & vốn' : 'Hàng còn'}"></h1>
       <nav class="section-links mb-3" aria-label="Quản lý hàng hóa">
@@ -72,6 +73,5 @@
         </table>
       </div>
     </main>
-    <nav th:replace="~{fragments :: nav}"></nav>
   </body>
 </html>

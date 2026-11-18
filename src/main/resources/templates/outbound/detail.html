@@ -2,6 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments :: head('Chi tiết xuất kho')}"></head>
   <body>
+    <th:block th:replace="~{fragments :: shell(true)}"></th:block>
     <main class="container py-3" th:with="o=${order}">
       <h1 class="h5" th:text="|${o.kind == 'SALE' ? 'Xuất bán' : 'Hao hụt'} #${o.id}|"></h1>
       <p th:text="${o.created_at}"></p>
@@ -63,6 +64,5 @@
         th:text="${o.trashed ? 'Thùng rác phiếu bán' : 'Danh sách phiếu xuất'}"
       ></a>
     </main>
-    <nav th:replace="~{fragments :: nav}"></nav>
   </body>
 </html>

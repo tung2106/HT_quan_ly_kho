@@ -2,9 +2,10 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments :: head('Đăng nhập')}"></head>
   <body>
-    <main class="container py-4" style="max-width: 460px">
+    <main class="container login-page">
       <div class="card card-body">
-        <h1 class="h4">Đăng nhập cửa hàng</h1>
+        <span class="brand-mark mb-3"><svg th:replace="~{fragments :: icon('stock')}"></svg></span>
+        <h1 class="h4 mb-4">Đăng nhập cửa hàng</h1>
         <p class="alert alert-danger" th:if="${param.error}">
           Chưa đăng nhập được. Kiểm tra thông tin hoặc liên hệ quản lý về trạng thái tài khoản.
         </p>

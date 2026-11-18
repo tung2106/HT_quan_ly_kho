@@ -2,10 +2,10 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments :: head('Trang chủ')}"></head>
   <body>
+    <th:block th:replace="~{fragments :: shell(true)}"></th:block>
     <main class="container py-3 home-page">
       <header class="home-welcome">
         <div>
-          <span class="home-eyebrow">CỬA HÀNG CỦA GIA ĐÌNH</span>
           <h1>Quản lý cửa hàng</h1>
           <p>Vật liệu xây dựng &amp; nông sản</p>
         </div>
@@ -18,16 +18,18 @@
         />
       </header>
       <h2 class="h5 mt-3 mb-3">Ghi giao dịch</h2>
-      <div class="home-grid home-transactions">
+      <div class="home-grid">
         <a class="home-tile home-primary" th:if="${isOwner}" th:href="@{/purchases/new}">
           <span class="home-icon"><svg th:replace="~{fragments :: icon('in')}"></svg></span>
           <strong>Nhập hàng</strong>
-          <span>Hàng về · Tiền đã trả</span>
         </a>
         <a class="home-tile home-primary" th:href="@{/outbound/new}">
           <span class="home-icon"><svg th:replace="~{fragments :: icon('out')}"></svg></span>
           <strong>Xuất bán</strong>
-          <span>Hàng bán · Tiền khách trả</span>
+        </a>
+        <a class="home-tile" th:if="${isOwner}" th:href="@{/outbound/new(kind='WASTE')}">
+          <span class="home-icon"><svg th:replace="~{fragments :: icon('leaf')}"></svg></span>
+          <strong>Ghi hao hụt</strong>
         </a>
       </div>
       <section
@@ -61,22 +63,16 @@
         <a class="home-tile" th:href="@{/stock}">
           <span class="home-icon"><svg th:replace="~{fragments :: icon('stock')}"></svg></span>
           <strong th:text="${isOwner ? 'Hàng còn & vốn' : 'Hàng còn'}"></strong>
-          <span>Số hàng còn sau mỗi lần nhập, bán</span>
         </a>
         <a class="home-tile" th:if="${isOwner}" th:href="@{/stock/lots}">
           <span class="home-icon"><svg th:replace="~{fragments :: icon('stock')}"></svg></span>
           <strong>Các lô còn tồn</strong>
-          <span>Số lượng &amp; giá vốn từng lô</span>
+        </a>
+        <a class="home-tile" th:if="${isOwner}" th:href="@{/capital}">
+          <span class="home-icon"><svg th:replace="~{fragments :: icon('money')}"></svg></span>
+          <strong>Vốn &amp; công nợ</strong>
         </a>
       </div>
-      <a class="home-capital-link" th:if="${isOwner}" th:href="@{/capital}">
-        <svg th:replace="~{fragments :: icon('money')}"></svg>
-        <span>
-          <strong>Vốn &amp; công nợ</strong>
-          <small>Xem vốn · Thu khách · Trả tiền nhập hàng</small>
-        </span>
-        <span aria-hidden="true">→</span>
-      </a>
       <h2 class="h5 mt-4 mb-3">Tra cứu phiếu</h2>
       <div class="home-history-links">
         <a th:if="${isOwner}" th:href="@{/purchases}">
@@ -90,14 +86,6 @@
           <span aria-hidden="true">→</span>
         </a>
       </div>
-      <a
-        th:if="${isOwner}"
-        class="btn btn-outline-secondary mt-3"
-        th:href="@{/outbound/new(kind='WASTE')}"
-      >
-        Ghi hàng hao hụt
-      </a>
     </main>
-    <nav th:replace="~{fragments :: nav}"></nav>
   </body>
 </html>

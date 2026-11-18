@@ -2,10 +2,11 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments :: head(${trash ? 'Thùng rác phiếu nhập' : 'Nhập hàng'})}"></head>
   <body>
+    <th:block th:replace="~{fragments :: shell(true)}"></th:block>
     <main class="container py-3">
-      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
-        <h1 class="h4 mb-0" th:text="${trash ? 'Thùng rác phiếu nhập' : 'Đơn nhập hàng'}"></h1>
-        <div class="d-flex flex-wrap gap-2">
+      <header class="page-heading">
+        <h1 th:text="${trash ? 'Thùng rác phiếu nhập' : 'Đơn nhập hàng'}"></h1>
+        <div class="page-actions">
           <a th:if="${trash}" class="btn btn-outline-secondary" th:href="@{/purchases}">
             Lịch sử nhập
           </a>
@@ -20,39 +21,57 @@
             + Nhập hàng
           </a>
         </div>
-      </div>
+      </header>
       <div th:replace="~{fragments :: alerts}"></div>
       <p th:if="${trash}" class="text-muted">
         Khôi phục phiếu để tính lại số lượng, vốn và công nợ theo lô đã nhập.
       </p>
-      <form novalidate method="get" th:action="@{/purchases}" class="card card-body mb-3">
-        <input th:if="${trash}" type="hidden" name="trash" value="true" />
-        <label class="form-label" for="purchase-search">Tìm người bán, tên hàng hoặc mã lô</label>
-        <input
-          id="purchase-search"
-          name="keyword"
-          type="search"
-          class="form-control"
-          th:value="${keyword}"
-        />
-        <button class="btn btn-outline-primary mt-2">Tìm phiếu nhập</button>
-      </form>
+      <th:block
+        th:replace="~{fragments :: receiptSearch('/purchases', 'Tìm theo người bán, tên hàng hoặc mã lô')}"
+      ></th:block>
       <p
+        class="receipt-empty"
         th:if="${#lists.isEmpty(orders)}"
         th:text="${!#strings.isEmpty(keyword) ? 'Không tìm thấy phiếu nhập phù hợp.' : (trash ? 'Thùng rác chưa có phiếu nhập.' : 'Chưa có phiếu nhập. Bấm Nhập hàng để ghi lần đầu.')}"
       ></p>
-      <div class="card mb-2" th:each="o : ${orders}">
-        <div class="card-body py-2">
-          <div class="d-flex flex-wrap gap-2 justify-content-between">
-            <strong th:text="${#temporals.format(o.orderDate,'dd/MM/yyyy')}"></strong>
+      <article class="card card-body receipt" th:each="o : ${orders}">
+        <div class="receipt-header">
+          <div>
+            <span class="receipt-meta">
+              <span th:text="|Phiếu nhập #${o.id}|"></span>
+              ·
+              <time th:text="${#temporals.format(o.orderDate,'dd/MM/yyyy')}"></time>
+            </span>
+            <h2
+              class="receipt-title"
+              th:text="${#lists.size(o.items) == 1 ? o.items[0].product.name : #lists.size(o.items) + ' mặt hàng'}"
+            ></h2>
             <span th:text="|Người bán: ${o.sellerDisplayName}|"></span>
+            <span
+              class="receipt-meta"
+              th:if="${o.lotCode != null}"
+              th:text="|Lô ${o.lotCode}|"
+            ></span>
           </div>
-          <div class="small text-muted mb-2" th:text="|Phiếu nhập #${o.id}|"></div>
+          <div class="receipt-total">
+            <span class="receipt-meta">Tổng phiếu</span>
+            <strong
+              th:text="${#numbers.formatDecimal(o.total,1,'POINT',0,'COMMA')} + ' VNĐ'"
+            ></strong>
+          </div>
+        </div>
+        <div class="receipt-payments">
+          <span
+            th:text="|Đã trả: ${#numbers.formatDecimal(o.paidAmount,1,'POINT',0,'COMMA')} VNĐ|"
+          ></span>
           <strong
-            class="d-block mb-2"
-            th:if="${o.lotCode != null}"
-            th:text="|Lô ${o.lotCode}|"
+            class="text-danger"
+            th:if="${!trash and o.total.compareTo(o.paidAmount) > 0}"
+            th:text="'Còn nợ ' + ${#numbers.formatDecimal(o.total.subtract(o.paidAmount),1,'POINT',0,'COMMA')} + ' VNĐ'"
           ></strong>
+        </div>
+        <details class="receipt-details">
+          <summary>Chi tiết phiếu nhập</summary>
           <div class="small">
             <div class="mb-2" th:each="it : ${o.items}">
               <span
@@ -69,32 +88,12 @@
               </details>
             </div>
           </div>
-          <div class="d-flex flex-column flex-sm-row gap-1 justify-content-between mt-1">
-            <span>
-              Tổng:
-              <b th:text="${#numbers.formatDecimal(o.total,1,'POINT',0,'COMMA')} + ' VNĐ'"></b>
-            </span>
-            <span
-              class="text-danger"
-              th:if="${!trash and o.total.compareTo(o.paidAmount) > 0}"
-              th:text="'Còn nợ ' + ${#numbers.formatDecimal(o.total.subtract(o.paidAmount),1,'POINT',0,'COMMA')} + ' VNĐ'"
-            ></span>
-          </div>
-          <div
-            th:text="|Đã trả: ${#numbers.formatDecimal(o.paidAmount,1,'POINT',0,'COMMA')} VNĐ|"
-          ></div>
           <div
             class="small text-muted"
             th:if="${!#strings.isEmpty(o.note)}"
             th:text="${o.note}"
           ></div>
-          <a
-            class="btn btn-danger w-100 mt-2"
-            th:if="${!trash and o.total.compareTo(o.paidAmount) > 0}"
-            th:href="@{/capital(section='debts')} + '#purchase-debt-' + ${o.id}"
-          >
-            Thanh toán
-          </a>
+
           <form
             novalidate
             class="mt-2"
@@ -123,9 +122,15 @@
           <small th:if="${!trash and o.paidAmount.signum() > 0}" class="text-muted d-block mt-2">
             Phiếu đã trả tiền nên không thể xóa.
           </small>
-        </div>
-      </div>
+        </details>
+        <a
+          class="btn btn-outline-danger receipt-pay"
+          th:if="${!trash and o.total.compareTo(o.paidAmount) > 0}"
+          th:href="@{/capital(section='debts')} + '#purchase-debt-' + ${o.id}"
+        >
+          Thanh toán
+        </a>
+      </article>
     </main>
-    <nav th:replace="~{fragments :: nav}"></nav>
   </body>
 </html>

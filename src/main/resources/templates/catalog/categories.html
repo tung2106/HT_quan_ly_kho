@@ -2,6 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments :: head('Danh mục')}"></head>
   <body>
+    <th:block th:replace="~{fragments :: shell(true)}"></th:block>
     <main class="container py-3">
       <h1 class="h4 mb-3">Danh mục</h1>
       <div th:replace="~{fragments :: alerts}"></div>
@@ -64,6 +65,5 @@
         </li>
       </ul>
     </main>
-    <nav th:replace="~{fragments :: nav}"></nav>
   </body>
 </html>

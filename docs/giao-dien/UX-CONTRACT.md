@@ -41,7 +41,7 @@ và ngôn ngữ theo thiết lập thiết bị; không tự viết combobox/cal
 
 | Thao tác | Đang chờ | Thành công | Lỗi/khôi phục | Nguồn |
 |---|---|---|---|---|
-| Nhập, xuất, sửa sản phẩm | chặn gửi trùng, loader sau 250ms | về danh sách theo controller | giữ form theo controller, thông báo lỗi | Purchase/Operations/ProductController |
+| Nhập, xuất, sửa sản phẩm | chặn gửi trùng, hiện màn chờ sau 1,5 giây | về danh sách theo controller | giữ form theo controller, thông báo lỗi | Purchase/Operations/ProductController |
 | Xóa/ngừng dùng | xác nhận tên và hệ quả, focus Hủy | danh sách, thông báo máy chủ | không tự ẩn trước khi server chấp nhận | Product/Supplier/CategoryController |
 | Thu/trả, tất toán | xác nhận tất toán và khóa gửi trùng | về công nợ, lịch sử được lưu | server kiểm tra phần nợ hiện tại | OperationsController |
 | Tìm NCC/lịch sử | GET khi bấm Tìm/Lọc | query trong URL | giữ bộ lọc, có xóa tìm kiếm | Supplier/OperationsController |
@@ -50,12 +50,13 @@ và ngôn ngữ theo thiết lập thiết bị; không tự viết combobox/cal
 
 ## Navigation and responsive behavior
 
-- Giữ route hiện có. Thanh dưới có nhãn và aria-current theo nhóm chức năng;
-  sản phẩm/lô nằm trong Tồn kho; phiếu nhập trong Nhập hàng. Ẩn mục NCC khỏi điều hướng chính.
+- Dùng một thanh chức năng có nhãn và aria-current theo nhóm. Dưới 900px thanh nằm ở cạnh dưới.
+  Từ 900px thanh nằm trên đầu trang. Sản phẩm và lô thuộc Hàng còn, phiếu nhập thuộc Nhập hàng.
 - Cài đặt dùng chung ở góc phải: Sáng/Tối, Sản phẩm và Quản lý tài khoản cho OWNER,
   Đổi mật khẩu và Đăng xuất cho người đã đăng nhập. STAFF không thấy công cụ quản lý;
   vẫn xem giá bán từ Hàng còn. Quyền máy chủ giữ nguyên.
-- Trang chủ giữ nhóm công việc, mèo và hao hụt; quản lý sản phẩm/tài khoản chuyển vào Cài đặt.
+- Trang chủ chia công việc thành Ghi giao dịch, Theo dõi hàng & tiền và Tra cứu phiếu.
+  Quản lý thấy Nhập hàng, Xuất bán và Ghi hao hụt. Nhân viên thấy Xuất bán.
   Menu dùng dialog native: focus vào Đóng, Escape hoặc chạm nền bên ngoài để đóng,
   trả focus về nút Cài đặt; kéo từ bên trong ra ngoài không đóng nhầm,
   không gửi hoặc xóa dữ liệu form đang nhập khi mở/đóng hay đổi theme.
@@ -70,6 +71,8 @@ và ngôn ngữ theo thiết lập thiết bị; không tự viết combobox/cal
   Trùng mã lô báo lỗi, giữ dữ liệu; gửi lại cùng request_key trả về phiếu đã lưu.
 - Lịch sử nhập/xuất dùng tìm kiếm GET trong URL, chữ có dấu/không dấu tương đương khi tìm.
   Nhân viên vẫn chỉ tìm được phiếu bán do mình lập. Tên lưu không bị bỏ dấu hoặc gộp theo tìm kiếm.
+  Mở Chi tiết phiếu nhập để xem số lượng, ghi chú và nút xử lý phiếu. Nút Thanh toán
+  của phiếu còn nợ luôn hiển thị ngay trên danh sách.
 - Quản lý có thể chuyển phiếu nhập vào Thùng rác sau khi xác nhận số phiếu.
   Chặn xóa nếu đã trả tiền, xuất bán hoặc ghi hao hụt từ lô. Khi xóa, ghi đối ứng từng lô,
   tính lại vốn và bỏ khoản phải trả. Khôi phục dùng lại phiếu, ngày nhập, mã lô và giá vốn gốc.
@@ -108,7 +111,7 @@ và ngôn ngữ theo thiết lập thiết bị; không tự viết combobox/cal
 
 Form POST theo phản hồi máy chủ, không optimistic, không tự gửi lại khi mất mạng.
 Chống gửi trùng client đi cùng UUID/khóa máy chủ hiện có; client không thay server.
-Mèo hiện chậm 250ms; sau 12 giây cho ẩn màn hình chờ và nhắc kiểm tra trước khi gửi lại.
+Mèo hiện khi đã chờ 1,5 giây. Nếu tiếp tục chờ lâu, người dùng có thể ẩn màn hình chờ.
 Không lưu mật khẩu hay form công nợ vào localStorage. Phiên hết hạn về đăng nhập.
 
 ## Migration status and remaining work

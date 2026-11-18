@@ -2,6 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments :: head('Sản phẩm')}"></head>
   <body>
+    <th:block th:replace="~{fragments :: shell(true)}"></th:block>
     <main class="container py-3">
       <h1 class="h4 mb-3" th:text="${form.id == null} ? 'Thêm sản phẩm' : 'Sửa sản phẩm'"></h1>
       <div th:replace="~{fragments :: alerts}"></div>
@@ -123,6 +124,5 @@
       </div>
     </main>
     <script defer th:src="@{/js/product-unit.js}"></script>
-    <nav th:replace="~{fragments :: nav}"></nav>
   </body>
 </html>

@@ -2,6 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments :: head('Ghi xuất kho')}"></head>
   <body>
+    <th:block th:replace="~{fragments :: shell(true)}"></th:block>
     <main class="container py-3">
       <h1 class="h5" th:text="${form.kind == 'SALE' ? 'Ghi xuất bán' : 'Ghi hao hụt'}"></h1>
       <div th:replace="~{fragments :: alerts}"></div>
@@ -170,7 +171,6 @@
     </main>
     <script defer th:src="@{/js/outbound-rows.js}"></script>
     <script defer th:src="@{/js/batch-select.js(v=2)}"></script>
-    <nav th:replace="~{fragments :: nav}"></nav>
     <script defer th:src="@{/js/settlement.js(v=3)}"></script>
   </body>
 </html>

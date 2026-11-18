@@ -49,17 +49,16 @@
   }
   remember();
   window.addEventListener('pageshow', remember);
-  const toolbar = document.querySelector('[data-app-toolbar]') || document.createElement('div');
-  if (!toolbar.className) toolbar.className = 'container pt-3 d-flex gap-2 align-items-start';
-  document.body.prepend(toolbar);
   if (location.pathname === home) return;
+  const main = document.querySelector('main');
+  if (!main) return;
   const actions = document.createElement('div');
   actions.className = 'back-actions';
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'btn btn-outline-primary';
   const capitalPage = location.pathname === home + 'capital';
-  button.textContent = capitalPage ? '⌂ Trang chủ' : '← Quay lại';
+  button.textContent = capitalPage ? 'Trang chủ' : '← Quay lại';
   button.addEventListener('click', () => {
     if (capitalPage) {
       location.assign(home);
@@ -79,5 +78,5 @@
     capitalMenu.style.minWidth = '0';
     actions.appendChild(capitalMenu);
   }
-  toolbar.prepend(actions);
+  main.prepend(actions);
 })();

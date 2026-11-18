@@ -2,6 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments :: head('Vốn và công nợ')}"></head>
   <body>
+    <th:block th:replace="~{fragments :: shell(true)}"></th:block>
     <main class="container py-3" th:with="s=${summary}">
       <a
         th:if="${section != 'menu'}"
@@ -24,51 +25,39 @@
         aria-label="Các mục vốn và công nợ"
       >
         <div class="col-6 col-md-6">
-          <a
-            class="capital-menu-item capital-menu-blue"
-            th:attr="aria-current=${section == 'capital' ? 'page' : null}"
-            th:href="@{/capital(section='capital')}"
-          >
-            <span class="capital-menu-icon" aria-hidden="true">▣</span>
+          <a class="capital-menu-item capital-menu-blue" th:href="@{/capital(section='capital')}">
+            <span class="capital-menu-icon" aria-hidden="true">
+              <svg th:replace="~{fragments :: icon('money')}"></svg>
+            </span>
             <strong>Xem vốn</strong>
             <span>Vốn tồn và kết quả bán</span>
-            <small th:if="${section == 'capital'}">Đang xem</small>
           </a>
         </div>
         <div class="col-6 col-md-6">
-          <a
-            class="capital-menu-item capital-menu-purple"
-            th:attr="aria-current=${section == 'debts' ? 'page' : null}"
-            th:href="@{/capital(section='debts')}"
-          >
-            <span class="capital-menu-icon" aria-hidden="true">⇄</span>
+          <a class="capital-menu-item capital-menu-purple" th:href="@{/capital(section='debts')}">
+            <span class="capital-menu-icon" aria-hidden="true">
+              <svg th:replace="~{fragments :: icon('receipt')}"></svg>
+            </span>
             <strong>Công nợ</strong>
             <span>Thu khách · Trả tiền nhập hàng</span>
-            <small th:if="${section == 'debts'}">Đang xem</small>
           </a>
         </div>
         <div class="col-6 col-md-6">
-          <a
-            class="capital-menu-item capital-menu-green"
-            th:attr="aria-current=${section == 'receipts' ? 'page' : null}"
-            th:href="@{/capital(section='receipts')}"
-          >
-            <span class="capital-menu-icon" aria-hidden="true">↙</span>
+          <a class="capital-menu-item capital-menu-green" th:href="@{/capital(section='receipts')}">
+            <span class="capital-menu-icon" aria-hidden="true">
+              <svg th:replace="~{fragments :: icon('in')}"></svg>
+            </span>
             <strong>Lịch sử thu</strong>
             <span>Tiền đã thu từ khách</span>
-            <small th:if="${section == 'receipts'}">Đang xem</small>
           </a>
         </div>
         <div class="col-6 col-md-6">
-          <a
-            class="capital-menu-item capital-menu-red"
-            th:attr="aria-current=${section == 'payments' ? 'page' : null}"
-            th:href="@{/capital(section='payments')}"
-          >
-            <span class="capital-menu-icon" aria-hidden="true">↗</span>
+          <a class="capital-menu-item capital-menu-red" th:href="@{/capital(section='payments')}">
+            <span class="capital-menu-icon" aria-hidden="true">
+              <svg th:replace="~{fragments :: icon('out')}"></svg>
+            </span>
             <strong>Lịch sử trả</strong>
             <span>Tiền đã trả khi nhập hàng</span>
-            <small th:if="${section == 'payments'}">Đang xem</small>
           </a>
         </div>
       </nav>
@@ -309,6 +298,5 @@
       </section>
     </main>
     <script defer th:src="@{/js/debt-tabs.js}"></script>
-    <nav th:replace="~{fragments :: nav}"></nav>
   </body>
 </html>
