@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: vatlieu
       POSTGRES_USER: vatlieu
-      POSTGRES_PASSWORD: vatlieu123   # chỉ để dev, đổi khi triển khai thật
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:?Set SPRING_DATASOURCE_PASSWORD before starting}
     ports: ["5432:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
 volumes:

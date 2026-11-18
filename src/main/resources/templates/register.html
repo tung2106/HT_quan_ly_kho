@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="~{fragments :: head('Đăng ký tài khoản')}"></head>
+  <body>
+    <main class="container py-4" style="max-width: 460px">
+      <div class="card card-body">
+        <h1
+          class="h4"
+          th:text="${challenge == null ? 'Đăng ký bằng số điện thoại' : 'Xác thực số điện thoại'}"
+        ></h1>
+        <div th:replace="~{fragments :: alerts}"></div>
+        <th:block th:if="${challenge == null}">
+          <p>Sau khi xác thực số điện thoại, bạn cần quản lý duyệt để vào kho.</p>
+          <p th:unless="${smsEnabled}" class="alert alert-info" role="status">
+            Cửa hàng chưa bật gửi mã SMS. Hãy liên hệ quản lý để được cấp tài khoản.
+          </p>
+          <form th:if="${captchaSiteKey != null}" method="post" th:action="@{/register}">
+            <label class="form-label" for="phone">Số điện thoại Việt Nam</label>
+            <input
+              class="form-control mb-3"
+              id="phone"
+              name="phone"
+              type="tel"
+              autocomplete="tel"
+              maxlength="24"
+              th:value="${phone}"
+              required
+            />
+            <p class="small">
+              Khi yêu cầu mã, bạn đồng ý gửi số điện thoại tới Google để xác thực và phòng chống lạm
+              dụng.
+            </p>
+            <div
+              class="g-recaptcha mb-3"
+              data-size="compact"
+              th:attr="data-sitekey=${captchaSiteKey}"
+            ></div>
+            <button class="btn btn-primary w-100">Nhận mã qua SMS</button>
+          </form>
+          <script
+            th:if="${captchaSiteKey != null}"
+            src="https://www.google.com/recaptcha/api.js?hl=vi"
+            defer
+          ></script>
+        </th:block>
+        <th:block th:if="${challenge != null}">
+          <p
+            th:text="|Nhập mã SMS cho số ${challenge.phone()}. Mã có hiệu lực tối đa 10 phút.|"
+          ></p>
+          <form method="post" th:action="@{/register/verify}">
+            <label class="form-label" for="code">Mã xác thực (OTP)</label>
+            <input
+              class="form-control mb-3"
+              id="code"
+              name="code"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxlength="6"
+              required
+            />
+            <label class="form-label" for="fullName">Họ tên</label>
+            <input
+              class="form-control mb-3"
+              id="fullName"
+              name="fullName"
+              autocomplete="name"
+              maxlength="100"
+              th:value="${fullName}"
+              required
+            />
+            <label class="form-label" for="password">Mật khẩu (ít nhất 12 ký tự)</label>
+            <input
+              class="form-control mb-3"
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              minlength="12"
+              required
+            />
+            <button class="btn btn-primary w-100">Xác thực và đăng ký</button>
+          </form>
+          <a class="btn btn-outline-primary mt-3" th:href="@{/register}">
+            Đổi số hoặc yêu cầu mã mới
+          </a>
+        </th:block>
+        <a class="btn btn-link mt-2" th:href="@{/login}">Về đăng nhập</a>
+      </div>
+    </main>
+  </body>
+</html>

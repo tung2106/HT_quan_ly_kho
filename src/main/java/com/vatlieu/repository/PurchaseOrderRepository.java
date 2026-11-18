@@ -1,9 +1,9 @@
 package com.vatlieu.repository;
 
 import com.vatlieu.entity.PurchaseOrder;
-import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Long> {
-    List<PurchaseOrder> findAllByOrderByOrderDateDescIdDesc();
+  List<PurchaseOrder> findAllByOrderByOrderDateDescIdDesc();
 }

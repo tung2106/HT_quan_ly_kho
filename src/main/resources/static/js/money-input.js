@@ -1,6 +1,8 @@
 (() => {
   const moneyName = /(?:^|\.)(unitPrice|lotAmount|retailPrice|shippingCost|paidAmount|amount)$/;
-  function canonical(value) { return value.replace(/\./g, ''); }
+  function canonical(value) {
+    return value.replace(/\./g, '');
+  }
   function format(value) {
     return value.replace(/\./g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
@@ -16,7 +18,8 @@
     const [whole, fraction = ''] = value.split('.');
     return BigInt(whole || '0') * 100n + BigInt((fraction + '00').slice(0, 2));
   }
-  if (typeof module !== 'undefined') module.exports = { canonical, format, valid, cents, fromServer };
+  if (typeof module !== 'undefined')
+    module.exports = { canonical, format, valid, cents, fromServer };
   if (typeof document === 'undefined') return;
   const initialized = new WeakSet();
   function validate(input) {
@@ -63,7 +66,8 @@
       // Không bỏ ký tự sai (ví dụ dấu âm), tránh vô tình biến số tiền sai thành số hợp lệ.
       if (/^[\d.]*$/.test(before)) {
         input.value = format(before);
-        let cursor = 0, seen = 0;
+        let cursor = 0,
+          seen = 0;
         while (cursor < input.value.length && seen < count) {
           if (input.value[cursor] !== '.') seen++;
           cursor++;
@@ -80,26 +84,34 @@
     root.querySelectorAll?.('input').forEach(setup);
   }
   scan(document);
-  new MutationObserver(records => records.forEach(r => r.addedNodes.forEach(scan)))
-    .observe(document.body, { childList: true, subtree: true });
-  document.querySelectorAll('form').forEach(form => {
+  new MutationObserver((records) => records.forEach((r) => r.addedNodes.forEach(scan))).observe(
+    document.body,
+    { childList: true, subtree: true }
+  );
+  document.querySelectorAll('form').forEach((form) => {
     // Chỉ chuẩn hóa dữ liệu gửi đi; giữ dấu phân cách trên màn hình, kể cả khi quay lại.
-    form.addEventListener('formdata', event => {
-      form.querySelectorAll('input[data-money-formatted]').forEach(input => {
+    form.addEventListener('formdata', (event) => {
+      form.querySelectorAll('input[data-money-formatted]').forEach((input) => {
         if (!input.disabled && input.name) {
           // Sửa tên sản phẩm không được vô tình làm tròn giá cũ nếu người dùng chưa sửa ô tiền.
-          const unchanged = input.dataset.moneyOriginal !== undefined && input.value === input.dataset.moneyDisplay;
-          event.formData.set(input.name, unchanged ? input.dataset.moneyOriginal : canonical(input.value));
+          const unchanged =
+            input.dataset.moneyOriginal !== undefined && input.value === input.dataset.moneyDisplay;
+          event.formData.set(
+            input.name,
+            unchanged ? input.dataset.moneyOriginal : canonical(input.value)
+          );
         }
       });
     });
-    form.addEventListener('reset', () => setTimeout(() => {
-      form.querySelectorAll('input[data-money-formatted]').forEach(input => {
-        input.value = format(fromServer(input.defaultValue));
-        input.dataset.moneyOriginal = input.defaultValue;
-        input.dataset.moneyDisplay = input.value;
-        validate(input);
-      });
-    }, 0));
+    form.addEventListener('reset', () =>
+      setTimeout(() => {
+        form.querySelectorAll('input[data-money-formatted]').forEach((input) => {
+          input.value = format(fromServer(input.defaultValue));
+          input.dataset.moneyOriginal = input.defaultValue;
+          input.dataset.moneyDisplay = input.value;
+          validate(input);
+        });
+      }, 0)
+    );
   });
 })();

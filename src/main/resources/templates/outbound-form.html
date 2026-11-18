@@ -1,74 +1,176 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments :: head('Ghi xuất kho')}"></head>
-<body><main class="container py-3">
-  <h1 class="h5" th:text="${form.kind == 'SALE' ? 'Ghi xuất bán' : 'Ghi hao hụt'}"></h1>
-  <div th:replace="~{fragments :: alerts}"></div>
-  <p class="small text-muted">Chọn sản phẩm rồi chọn đơn vị đã khai báo. Số lượng sau quy đổi tối đa 3 số lẻ.</p>
-  <form method="post" th:action="@{/outbound}">
-    <input type="hidden" name="kind" th:value="${form.kind}">
-    <input type="hidden" name="requestKey" th:value="${form.requestKey}">
-    <div th:if="${form.kind == 'SALE'}" class="mb-3">
-      <label for="customer" class="form-label">Tên / thông tin liên hệ khách (bắt buộc khi còn nợ)</label>
-      <input id="customer" name="customer" class="form-control" maxlength="200" th:value="${form.customer}">
-    </div>
-    <div id="rows">
-      <div class="card card-body mb-2 row-item" th:each="it,s : ${form.items}">
-        <label class="form-label">Sản phẩm</label>
-        <select class="form-select mb-2" th:name="|items[${s.index}].productId|">
-          <option value="">-- Chọn sản phẩm --</option>
-          <option th:each="p : ${products}" th:value="${p.id}" th:attr="data-group=${p.productGroup}" th:text="|${p.name} (${p.baseUnit})|" th:selected="${it.productId == p.id}"></option>
-        </select>
-        <div th:if="${form.kind == 'SALE'}">
-<label class="form-label">Lô xuất bán</label>
-<select class="form-select mb-2 batch-select" aria-label="Lô xuất bán" th:name="|items[${s.index}].batchId|">
-<option value="">Tự động: lô nhập trước</option>
-<option th:each="b : ${lots}" th:if="${b.active}" th:value="${b.id}" th:attr="data-product-id=${b.product_id}" th:selected="${it.batchId == b.id}" th:text="|Lô #${b.id} · ${b.received_date} · còn ${b.qty_left.stripTrailingZeros().toPlainString()} ${b.base_unit}|"></option>
-</select>
-<small class="d-block mb-2">Bán từ nhiều lô: thêm dòng cùng sản phẩm và chọn từng lô. Số còn lại tính theo đơn vị gốc.</small>
-</div>
-<label class="form-label">Số lượng</label>
-        <input class="form-control mb-2" type="number" min="0" step="any" th:name="|items[${s.index}].qty|" th:value="${it.qty == null ? null : it.qty.stripTrailingZeros().toPlainString()}">
-        <label class="form-label">Đơn vị</label>
-        <select class="form-select mb-2 unit-select" aria-label="Đơn vị" th:name="|items[${s.index}].unit|">
-          <option value="">Chọn đơn vị</option>
-          <option th:each="u : ${unitOptions}" th:value="${u.unit}" th:text="${u.label}" th:attr="data-product-id=${u.productId}"
-                  th:selected="${it.productId == u.productId and it.unit == u.unit}"></option>
-        </select>
-        <p class="small text-muted agriculture-conversion mb-2" hidden>1 tấn = 1000 kg · 1 tạ = 100 kg · 1 yến = 10 kg.<br>Ví dụ: 1,5 tấn = 1500 kg. Hãy nhập số lượng theo kg thực tế.</p>
-        <label th:if="${form.kind == 'SALE'}" class="form-label">Giá bán thực tế / đơn vị đã nhập (VNĐ)</label>
-        <input th:if="${form.kind == 'SALE'}" class="form-control" type="number" min="0" step="0.01" th:name="|items[${s.index}].unitPrice|" th:value="${it.unitPrice}">
-        <button type="button" class="btn btn-outline-secondary mt-2" onclick="removeRow(this)">Xóa dòng</button>
-      </div>
-    </div>
-    <button type="button" class="btn btn-outline-primary w-100 mb-3" onclick="addRow()">+ Thêm sản phẩm</button>
-    <div th:if="${form.kind == 'SALE'}" class="mb-3">
-<label class="form-check mt-2 mb-2"><input class="form-check-input settle-all" type="checkbox" name="settleAll" value="true" th:checked="${form.settleAll}"><span class="form-check-label">Tất toán — đã thu đủ tiền phiếu bán</span></label><small class="d-block mb-2">Khi lưu, hệ thống ghi đã thanh toán toàn bộ tổng tiền phiếu. Chỉ chọn khi đã thực nhận/trả đủ tiền.</small>
-      <label for="paid" class="form-label">Số tiền khách hàng đã trả</label>
-      <input id="paid" class="form-control" name="paidAmount" type="number" step="1" min="0" th:value="${form.paidAmount}">
-      <small>Nhập số tiền thực nhận cho phiếu này; để 0 nếu khách chưa trả. Phần còn thiếu được ghi công nợ, cần có tên khách hàng. Tổng tiền hàng được cộng tất cả dòng rồi làm tròn đến 1 đồng.</small>
-    </div>
-    <label for="note" class="form-label" th:text="${form.kind == 'WASTE' ? 'Lý do hao hụt (bắt buộc)' : 'Ghi chú'}"></label>
-    <textarea id="note" class="form-control mb-3" name="note" th:required="${form.kind == 'WASTE'}" th:text="${form.note}"></textarea>
-    <button class="btn btn-primary w-100">Lưu và trừ kho</button>
-    <a class="btn btn-link w-100" th:href="@{/outbound}">Quay lại</a>
-  </form>
-</main>
-<script>
-  function renumber() {
-    document.querySelectorAll('.row-item').forEach((row,index) => row.querySelectorAll('[name]').forEach(field => {
-      field.name = field.name.replace(/\[\d+\]/, `[${index}]`);
-    }));
-  }
-  function addRow() {
-    if (document.querySelectorAll('.row-item').length >= 100) return;
-    const row = document.querySelector('.row-item').cloneNode(true);
-    row.querySelectorAll('input,select').forEach(field => { field.value = ''; });
-    document.getElementById('rows').appendChild(row); renumber();
-  }
-  function removeRow(button) {
-    if (document.querySelectorAll('.row-item').length > 1) button.closest('.row-item').remove();
-    else button.closest('.row-item').querySelectorAll('input,select').forEach(field => { field.value = ''; });
-    renumber();
-  }
-</script><script defer th:src="@{/js/batch-select.js}"></script><nav th:replace="~{fragments :: nav}"></nav><script defer th:src="@{/js/settlement.js}"></script></body></html>
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="~{fragments :: head('Ghi xuất kho')}"></head>
+  <body>
+    <main class="container py-3">
+      <h1 class="h5" th:text="${form.kind == 'SALE' ? 'Ghi xuất bán' : 'Ghi hao hụt'}"></h1>
+      <div th:replace="~{fragments :: alerts}"></div>
+      <form novalidate method="post" th:action="@{/outbound}">
+        <input type="hidden" name="kind" th:value="${form.kind}" />
+        <input type="hidden" name="requestKey" th:value="${form.requestKey}" />
+        <div id="rows">
+          <div class="card card-body mb-2 row-item" th:each="it,s : ${form.items}">
+            <label class="form-label">Sản phẩm</label>
+            <select class="form-select mb-2" th:name="|items[${s.index}].productId|">
+              <option value="">-- Chọn sản phẩm --</option>
+              <option
+                th:each="p : ${products}"
+                th:value="${p.id}"
+                th:attr="data-group=${p.productGroup}"
+                th:text="|${p.name} (${p.baseUnit})|"
+                th:selected="${it.productId == p.id}"
+              ></option>
+            </select>
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label">Số lượng</label>
+                <input
+                  class="form-control mb-2"
+                  type="number"
+                  min="0"
+                  step="any"
+                  th:name="|items[${s.index}].qty|"
+                  th:value="${it.qty == null ? null : it.qty.stripTrailingZeros().toPlainString()}"
+                />
+              </div>
+              <div class="col-6">
+                <label class="form-label">Đơn vị</label>
+                <select
+                  class="form-select mb-2 unit-select"
+                  aria-label="Đơn vị"
+                  th:name="|items[${s.index}].unit|"
+                >
+                  <option value="">Chọn đơn vị</option>
+                  <option
+                    th:each="u : ${unitOptions}"
+                    th:value="${u.unit}"
+                    th:text="${u.label}"
+                    th:attr="data-product-id=${u.productId}"
+                    th:selected="${it.productId == u.productId and it.unit == u.unit}"
+                  ></option>
+                </select>
+              </div>
+            </div>
+            <p class="small text-muted agriculture-conversion mb-2" hidden>
+              1 tấn = 1000 kg · 1 tạ = 100 kg · 1 yến = 10 kg.
+            </p>
+            <div th:if="${form.kind == 'SALE'}" class="money-entry">
+              <label class="form-label">Giá bán mỗi đơn vị</label>
+              <input
+                class="form-control"
+                type="number"
+                min="0"
+                step="0.01"
+                th:name="|items[${s.index}].unitPrice|"
+                th:value="${it.unitPrice}"
+              />
+            </div>
+            <details
+              class="entry-options mt-2 batch-options"
+              th:if="${form.kind == 'SALE'}"
+              th:open="${it.batchId != null}"
+            >
+              <summary>
+                Lô xuất bán ·
+                <span data-lot-summary>Lô nhập trước</span>
+              </summary>
+              <label class="form-label">Lô xuất bán</label>
+              <select
+                class="form-select mb-2 batch-select"
+                aria-label="Lô xuất bán"
+                th:name="|items[${s.index}].batchId|"
+              >
+                <option value="">Tự chọn lô nhập trước</option>
+                <option
+                  th:each="b : ${lots}"
+                  th:if="${b.active}"
+                  th:value="${b.id}"
+                  th:attr="data-product-id=${b.product_id},data-lot-code=${b.lot_code}"
+                  th:selected="${it.batchId == b.id}"
+                  th:text="|Lô ${b.lot_code} · ${b.received_date} · còn ${b.qty_left.stripTrailingZeros().toPlainString()} ${b.base_unit}|"
+                ></option>
+              </select>
+              <small>Để bán từ hai lô, thêm một dòng cho lô thứ hai.</small>
+            </details>
+            <button type="button" class="btn btn-outline-secondary mt-2 remove-outbound-row">
+              Xóa dòng
+            </button>
+          </div>
+        </div>
+        <button type="button" class="btn btn-outline-primary w-100 mb-3" id="add-outbound-row">
+          + Thêm sản phẩm
+        </button>
+        <section
+          th:if="${form.kind == 'SALE'}"
+          class="card card-body mb-3"
+          aria-labelledby="sale-payment"
+        >
+          <h2 class="h5" id="sale-payment">Thu tiền khách</h2>
+          <div class="mb-3">
+            <label for="customer" class="form-label">Tên người nhận (cần ghi khi còn nợ)</label>
+            <input
+              id="customer"
+              name="customer"
+              class="form-control"
+              maxlength="200"
+              th:value="${form.customer}"
+            />
+          </div>
+          <div class="money-entry">
+            <label for="paid" class="form-label">Số tiền khách đã trả</label>
+            <input
+              id="paid"
+              class="form-control"
+              name="paidAmount"
+              type="number"
+              step="1"
+              min="0"
+              th:value="${form.paidAmount}"
+              th:disabled="${form.settleAll}"
+              aria-describedby="paid-help"
+            />
+            <small id="paid-help" class="d-block mb-2">Để 0 nếu khách chưa trả.</small>
+            <input class="settle-all" type="hidden" name="settleAll" th:value="${form.settleAll}" />
+            <button
+              type="button"
+              class="btn btn-lg w-100 settlement-toggle"
+              data-settle-toggle
+              th:attr="aria-pressed=${form.settleAll}"
+              aria-controls="paid"
+              aria-describedby="settlement-help"
+            >
+              Tất toán
+            </button>
+            <small
+              id="settlement-help"
+              class="d-block my-2"
+              data-settle-status
+              role="status"
+            ></small>
+          </div>
+        </section>
+        <label
+          for="note"
+          class="form-label"
+          th:text="${form.kind == 'WASTE' ? 'Lý do hao hụt (bắt buộc)' : 'Ghi chú'}"
+        ></label>
+        <textarea
+          style="resize: none"
+          id="note"
+          class="form-control mb-3"
+          name="note"
+          th:required="${form.kind == 'WASTE'}"
+          th:text="${form.note}"
+        ></textarea>
+        <button
+          class="btn btn-primary w-100"
+          th:text="${form.kind == 'SALE' ? 'Lưu phiếu bán' : 'Ghi hao hụt'}"
+        ></button>
+      </form>
+    </main>
+    <script defer th:src="@{/js/outbound-rows.js}"></script>
+    <script defer th:src="@{/js/batch-select.js(v=2)}"></script>
+    <nav th:replace="~{fragments :: nav}"></nav>
+    <script defer th:src="@{/js/settlement.js(v=3)}"></script>
+  </body>
+</html>

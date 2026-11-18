@@ -1,11 +1,23 @@
 (() => {
-  document.querySelectorAll('.settle-all').forEach(checkbox => {
-    const amount = checkbox.form.querySelector('input[name="paidAmount"]');
+  document.querySelectorAll('.settle-all').forEach((control) => {
+    const amount = control.form.querySelector('input[name="paidAmount"]');
+    const button = control.form.querySelector('[data-settle-toggle]');
+    const status = control.form.querySelector('[data-settle-status]');
     function update() {
-      amount.disabled = checkbox.checked;
-      amount.closest('.money-input-wrap')?.classList.toggle('opacity-50', checkbox.checked);
+      const selected = control.type === 'checkbox' ? control.checked : control.value === 'true';
+      amount.disabled = selected;
+      amount.closest('.money-input-wrap')?.classList.toggle('opacity-50', selected);
+      button?.setAttribute('aria-pressed', String(selected));
+      if (status)
+        status.textContent = selected
+          ? 'Khi lưu phiếu sẽ ghi thu đủ. Bấm lại để bỏ chọn.'
+          : 'Chọn Tất toán nếu khách đã trả đủ.';
     }
-    checkbox.addEventListener('change', update);
+    button?.addEventListener('click', () => {
+      control.value = String(control.value !== 'true');
+      update();
+    });
+    control.addEventListener('change', update);
     update();
   });
 })();

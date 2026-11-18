@@ -12,13 +12,18 @@
     }
     if (batch.selectedOptions[0]?.disabled) batch.value = '';
     batch.disabled = !product.value;
+    row.querySelector('[data-lot-summary]').textContent =
+      batch.selectedOptions[0]?.dataset.lotCode || 'Lô nhập trước';
   }
   const rows = document.getElementById('rows');
   if (!rows) return;
-  rows.addEventListener('change', event => {
-    if (event.target.matches('select[name$=".productId"]')) update(event.target.closest('.row-item'));
+  rows.addEventListener('change', (event) => {
+    if (event.target.matches('select[name$=".productId"], .batch-select'))
+      update(event.target.closest('.row-item'));
   });
-  function scan() { rows.querySelectorAll('.row-item').forEach(update); }
+  function scan() {
+    rows.querySelectorAll('.row-item').forEach(update);
+  }
   new MutationObserver(scan).observe(rows, { childList: true });
   scan();
 })();

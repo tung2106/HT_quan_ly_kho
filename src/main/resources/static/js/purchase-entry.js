@@ -4,23 +4,17 @@
   function show(row, selector, visible) {
     const field = row.querySelector(selector);
     field.hidden = !visible;
-    field.querySelectorAll('input,textarea,select').forEach(input => input.disabled = !visible);
+    field.querySelectorAll('input,textarea,select').forEach((input) => (input.disabled = !visible));
   }
-  function update(row, initialize = false) {
-    const product = row.querySelector('select[name$=".productId"]');
+  function update(row) {
     const group = row.querySelector('.purchase-group');
     const mode = row.querySelector('.entry-mode');
-    if (initialize) group.value = product.selectedOptions[0]?.dataset.group || 'MATERIAL';
     const agriculture = group.value === 'AGRICULTURE';
-    Array.from(product.options).forEach(option => {
-      if (!option.value) return;
-      option.hidden = option.dataset.group !== group.value;
-      option.disabled = option.hidden;
+    const unit = row.querySelector('[name="baseUnit"]');
+    if (agriculture) unit.value = 'kg';
+    Array.from(unit.options).forEach((option) => {
+      option.disabled = agriculture && option.value !== 'kg';
     });
-    if (product.selectedOptions[0]?.disabled) {
-      product.value = '';
-      product.dispatchEvent(new Event('change', { bubbles: true }));
-    }
     show(row, '.agriculture-fields', agriculture);
     if (!agriculture) mode.value = 'WEIGHT';
     if (!mode.value) mode.value = 'WEIGHT';
@@ -29,14 +23,34 @@
     show(row, '.qty-field', !agriculture || mode.value !== 'BAGS');
     show(row, '.price-field', !agriculture || mode.value !== 'LOT');
     row.querySelector('.qty-label').textContent = agriculture ? 'Tổng kg thực tế' : 'Số lượng';
-    row.querySelector('.price-label').textContent = agriculture ? 'Giá mua / kg' : 'Đơn giá / đơn vị';
+    row.querySelector('.price-label').textContent = agriculture
+      ? 'Giá mua / kg'
+      : 'Đơn giá / đơn vị';
   }
-  rows.querySelectorAll('.row-item').forEach(row => update(row, true));
-  rows.addEventListener('change', event => {
-    if (event.target.matches('.purchase-group,.entry-mode,select[name$=".productId"]'))
-      update(event.target.closest('.row-item'));
+  rows.querySelectorAll('.row-item').forEach(update);
+  function handleChange(event) {
+    if (event.isComposing) return;
+    const row = event.target.closest('.row-item');
+    if (!row) return;
+    if (event.target.name === 'productName') {
+      const key = (value) => value.trim().normalize('NFC').toLocaleLowerCase('vi');
+      const matches = [...row.querySelectorAll('datalist option')].filter(
+        (option) => key(option.value) === key(event.target.value)
+      );
+      const sameGroup = matches.filter(
+        (option) => option.dataset.group === row.querySelector('.purchase-group').value
+      );
+      const selected =
+        matches.length === 1 ? matches[0] : sameGroup.length === 1 ? sameGroup[0] : null;
+      if (selected) {
+        row.querySelector('.purchase-group').value = selected.dataset.group;
+        row.querySelector('[name="baseUnit"]').value = selected.dataset.unit;
+      }
+    }
+    update(row);
+  }
+  rows.addEventListener('change', handleChange);
+  rows.addEventListener('input', (event) => {
+    if (event.target.name === 'productName') handleChange(event);
   });
-  new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(node => {
-    if (node.nodeType === 1 && node.matches('.row-item')) update(node, true);
-  }))).observe(rows, { childList: true });
 })();

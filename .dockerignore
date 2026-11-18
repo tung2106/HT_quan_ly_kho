@@ -1,0 +1,12 @@
+# Chỉ đưa mã nguồn cần đóng gói vào Docker, không đưa công cụ hoặc dữ liệu trên máy.
+**
+!Dockerfile
+!pom.xml
+!src/
+!src/**
+**/.env
+**/.env.*
+**/*.log
+**/*.dump
+**/*.backup
+**/*.key

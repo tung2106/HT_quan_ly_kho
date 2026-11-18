@@ -1,28 +1,77 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments :: head('Tồn kho')}"></head>
-<body>
-<div class="container py-3">
-  <h5 class="mb-3">Tồn kho</h5>
-  <div class="d-flex gap-2 mb-3"><a class="btn btn-outline-secondary" th:href="@{/products}">Sản phẩm</a><a class="btn btn-outline-secondary" th:if="${isOwner}" th:href="@{/suppliers}">Nhà cung cấp</a></div>
-  <a th:if="${isOwner}" class="btn btn-outline-primary mb-3" th:href="@{/stock/lots}">Xem các lô còn tồn</a><div th:replace="~{fragments :: alerts}"></div>
-  <div class="text-muted" th:if="${#lists.isEmpty(rows)}">Chưa có sản phẩm. Hãy thêm sản phẩm rồi nhập hàng.</div>
-  <div class="table-responsive" th:unless="${#lists.isEmpty(rows)}">
-    <table class="table table-sm align-middle">
-      <thead><tr><th>Sản phẩm</th><th class="text-end">Tồn</th><th th:if="${isOwner}" class="text-end">Giá vốn</th><th th:if="${isOwner}" class="text-end">Giá trị</th></tr></thead>
-      <tbody>
-        <tr th:each="r : ${rows}" th:classappend="${r.lowStock()} ? 'table-danger'">
-          <td><span th:text="${r.name()}"></span>
-              <span class="badge bg-secondary" th:if="${!r.active()}">Ngừng kinh doanh</span>
-              <span class="badge bg-danger" th:if="${r.lowStock()}">Sắp hết</span></td>
-          <td class="text-end text-nowrap"><span th:text="${r.qtyOnHand().stripTrailingZeros().toPlainString()}"></span> <small th:text="${r.baseUnit()}"></small></td>
-          <td th:if="${isOwner}" class="text-end" th:text="${#numbers.formatDecimal(r.avgCost(),1,'POINT',0,'COMMA')} + ' VNĐ'"></td>
-          <td th:if="${isOwner}" class="text-end" th:text="${#numbers.formatDecimal(r.value(),1,'POINT',0,'COMMA')} + ' VNĐ'"></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-<nav th:replace="~{fragments :: nav}"></nav>
-</body>
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="~{fragments :: head('Tồn kho')}"></head>
+  <body>
+    <main class="container py-3">
+      <h1 class="h4 mb-3" th:text="${isOwner ? 'Hàng còn & vốn' : 'Hàng còn'}"></h1>
+      <nav class="section-links mb-3" aria-label="Quản lý hàng hóa">
+        <a th:unless="${isOwner}" class="btn btn-outline-secondary" th:href="@{/products}">
+          Giá bán sản phẩm
+        </a>
+        <a
+          th:if="${isOwner}"
+          class="btn btn-outline-primary"
+          th:href="@{/stock/lots(group=${selectedGroup})}"
+        >
+          Các lô còn tồn
+        </a>
+      </nav>
+      <div th:replace="~{fragments :: alerts}"></div>
+      <th:block th:replace="~{fragments :: stockFilter('/stock', ${selectedGroup})}"></th:block>
+      <div class="text-muted" th:if="${#lists.isEmpty(rows)}">
+        Chưa có sản phẩm trong nhóm đang xem.
+      </div>
+      <p class="table-scroll-hint small text-muted" th:unless="${#lists.isEmpty(rows)}">
+        Vuốt ngang bảng để xem đủ các cột.
+      </p>
+      <div
+        class="table-responsive"
+        role="region"
+        aria-label="Số lượng và giá trị tồn kho"
+        tabindex="0"
+        th:unless="${#lists.isEmpty(rows)}"
+      >
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th scope="col">Sản phẩm</th>
+              <th scope="col" class="text-end">Tồn</th>
+              <th scope="col" th:if="${isOwner}" class="text-end">Giá vốn</th>
+              <th scope="col" th:if="${isOwner}" class="text-end">Giá trị</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              th:each="r : ${rows}"
+              th:classappend="${r.outOfStock() or r.lowStock()} ? 'table-danger'"
+            >
+              <td>
+                <span th:text="${r.name()}"></span>
+                <span class="badge bg-secondary" th:if="${!r.active()}">Ngừng kinh doanh</span>
+                <span class="badge bg-danger" th:if="${r.outOfStock()}">Hết hàng</span>
+                <span class="badge bg-danger" th:if="${!r.outOfStock() and r.lowStock()}">
+                  Sắp hết
+                </span>
+              </td>
+              <td class="text-end text-nowrap">
+                <span th:text="${r.qtyOnHand().stripTrailingZeros().toPlainString()}"></span>
+                <small th:text="${r.baseUnit()}"></small>
+              </td>
+              <td
+                th:if="${isOwner}"
+                class="text-end"
+                th:text="${#numbers.formatDecimal(r.avgCost(),1,'POINT',0,'COMMA')} + ' VNĐ'"
+              ></td>
+              <td
+                th:if="${isOwner}"
+                class="text-end"
+                th:text="${#numbers.formatDecimal(r.value(),1,'POINT',0,'COMMA')} + ' VNĐ'"
+              ></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+    <nav th:replace="~{fragments :: nav}"></nav>
+  </body>
 </html>

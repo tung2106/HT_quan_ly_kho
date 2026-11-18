@@ -1,0 +1,6 @@
+.tools/
+.m2/
+target/
+node_modules/
+src/main/resources/db/migration/
+package-lock.json

@@ -17,16 +17,28 @@
   const message = overlay.querySelector('.sky-loading-message');
   const dismiss = overlay.querySelector('button');
   let timer;
+  let reveal;
   let submitting = false;
-  const hide = () => { overlay.hidden = true; clearTimeout(timer); };
-  const reset = () => { hide(); submitting = false; };
+  const hide = () => {
+    overlay.hidden = true;
+    clearTimeout(timer);
+    clearTimeout(reveal);
+  };
+  const reset = () => {
+    hide();
+    submitting = false;
+  };
   const show = (text) => {
     message.textContent = text;
     dismiss.hidden = true;
-    overlay.hidden = false;
+    clearTimeout(reveal);
+    reveal = setTimeout(() => {
+      overlay.hidden = false;
+    }, 250);
     clearTimeout(timer);
     timer = setTimeout(() => {
-      message.textContent = 'Trang phản hồi hơi lâu. Bạn có thể ẩn màn hình chờ để xem lại, không cần gửi lại phiếu.';
+      message.textContent =
+        'Trang phản hồi hơi lâu. Bạn có thể ẩn màn hình chờ để xem lại, không cần gửi lại phiếu.';
       dismiss.hidden = false;
     }, 12000);
   };
@@ -35,21 +47,45 @@
   window.addEventListener('load', hide, { once: true });
   document.addEventListener('click', (event) => {
     const link = event.target.closest('a[href]');
-    if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+    if (
+      !link ||
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.altKey ||
+      link.hasAttribute('download') ||
+      (link.target && link.target !== '_self')
+    )
+      return;
     const url = new URL(link.href, location.href);
-    if (url.origin !== location.origin || (url.pathname === location.pathname && url.search === location.search && url.hash)) return;
+    if (
+      url.origin !== location.origin ||
+      (url.pathname === location.pathname && url.search === location.search && url.hash)
+    )
+      return;
     show('Đang mở trang, bạn chờ một chút nhé.');
   });
   document.addEventListener('submit', (event) => {
     if (event.defaultPrevented || (event.target.target && event.target.target !== '_self')) return;
-    if (submitting) { event.preventDefault(); return; }
+    if (submitting) {
+      event.preventDefault();
+      return;
+    }
     // Không đổi giá trị hoặc vô hiệu hóa trường form khi trình duyệt gửi dữ liệu.
     submitting = true;
     show('Đang gửi dữ liệu, bạn chờ một chút nhé.');
   });
-  document.querySelectorAll('.navbar a[href]').forEach(link => {
+  document.querySelectorAll('.navbar a[data-nav]').forEach((link) => {
     const path = new URL(link.href).pathname;
-    if (location.pathname === path || location.pathname.startsWith(path + '/')) link.setAttribute('aria-current', 'page');
+    const stockPath = /\/(stock|products|suppliers|categories)(\/|$)/.test(location.pathname);
+    const active =
+      link.dataset.nav === 'stock'
+        ? stockPath
+        : location.pathname === path ||
+          (link.dataset.nav !== 'home' && location.pathname.startsWith(path + '/'));
+    if (active) link.setAttribute('aria-current', 'page');
   });
   if (document.readyState !== 'complete') show('Đang tải trang, bạn chờ một chút nhé.');
 })();

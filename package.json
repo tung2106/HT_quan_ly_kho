@@ -1,0 +1,16 @@
+{
+  "name": "vatlieu-dev-tools",
+  "private": true,
+  "description": "Công cụ format và kiểm thử giao diện; không cần để chạy ứng dụng Java.",
+  "scripts": {
+    "format": "prettier --write \"src/**/*.{java,html,css,js,cjs}\" pom.xml package.json premium-ui.json .prettierrc.json",
+    "format:check": "prettier --check \"src/**/*.{java,html,css,js,cjs}\" pom.xml package.json premium-ui.json .prettierrc.json",
+    "test": "node --test src/test/js/*.test.cjs"
+  },
+  "devDependencies": {
+    "@prettier/plugin-xml": "3.4.2",
+    "jsdom": "31.0.0",
+    "prettier": "3.9.10",
+    "prettier-plugin-java": "2.11.0"
+  }
+}
