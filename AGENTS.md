@@ -1,5 +1,16 @@
 # AGENTS.md — Hướng dẫn cho AI làm việc trong dự án này
 
+## Bắt đầu mỗi phiên làm việc
+- Đọc `docs/HUONG-DAN-DU-AN.md` trước khi sửa dự án.
+- Chọn skill theo yêu cầu trong [mục lục Codex](.codex/README.md). Khi sửa giao diện,
+  nghiệp vụ, CSDL hoặc hợp đồng HTTP, đọc `SKILL.md` tương ứng trước khi chỉnh phần đó.
+  Hai quy trình trong `.codex/commands/` dành cho lời gọi `$kiem-thu-kho` và `$ra-soat-kho`.
+- Khi làm frontend, đọc thêm `docs/giao-dien/DESIGN.md`, `docs/giao-dien/UX-CONTRACT.md` và áp dụng hai skill
+  `frontend-design`, `frontend-design-premium` nếu có; giữ quy ước nghiệp vụ trong tài liệu này.
+- Kiểm tra nhánh và thay đổi hiện có; không ghi đè phần đang làm của người dùng.
+- Format bằng cấu hình Prettier trong dự án; áp dụng skill `vatlieu-code-quality`
+  khi có. Không format migration đã chạy hoặc các thư mục công cụ cục bộ.
+
 ## Mục tiêu dự án
 Hệ thống quản lý kho và lợi nhuận cho cửa hàng vật liệu xây dựng và nông sản
 (gạch, cát, xi măng, sắn, ngô, củ quả). Bán lẻ và bán sỉ, nhập hàng không cố định.

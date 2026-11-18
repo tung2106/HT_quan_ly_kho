@@ -31,7 +31,7 @@ public class PurchaseController {
     m.addAttribute("orders", service.history(keyword, trash));
     m.addAttribute("trash", trash);
     m.addAttribute("keyword", keyword);
-    return "purchases";
+    return "purchases/list";
   }
 
   @GetMapping("/new")
@@ -43,7 +43,7 @@ public class PurchaseController {
     f.getItems().add(new PurchaseItemForm());
     m.addAttribute("form", f);
     populate(m);
-    return "purchase-form";
+    return "purchases/form";
   }
 
   @PostMapping("/{id}/{action:trash|restore}")
@@ -85,7 +85,7 @@ public class PurchaseController {
     } catch (IllegalArgumentException e) {
       m.addAttribute("error", e.getMessage());
       populate(m);
-      return "purchase-form";
+      return "purchases/form";
     }
   }
 

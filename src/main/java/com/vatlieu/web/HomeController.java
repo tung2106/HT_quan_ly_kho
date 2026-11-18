@@ -25,13 +25,13 @@ public class HomeController {
   public String lots(@RequestParam(defaultValue = "") String group, Model m) {
     m.addAttribute("selectedGroup", StockService.normalizeGroup(group));
     m.addAttribute("productLots", stockService.lotsByProduct(group));
-    return "stock-lots";
+    return "stock/lots";
   }
 
   @GetMapping("/stock")
   public String stock(@RequestParam(defaultValue = "") String group, Model m) {
     m.addAttribute("selectedGroup", StockService.normalizeGroup(group));
     m.addAttribute("rows", stockService.findAll(group));
-    return "stock";
+    return "stock/overview";
   }
 }

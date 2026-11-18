@@ -24,13 +24,13 @@ public class ProductController {
   @GetMapping
   public String list(Model m) {
     m.addAttribute("products", productRepo.findAllByOrderByNameAsc());
-    return "products";
+    return "catalog/products";
   }
 
   @GetMapping("/new")
   public String create(Model m) {
     m.addAttribute("form", new ProductForm());
-    return "product-form";
+    return "catalog/product-form";
   }
 
   @GetMapping("/{id}/edit")
@@ -49,7 +49,7 @@ public class ProductController {
     m.addAttribute("form", f);
     m.addAttribute("product", p);
     m.addAttribute("units", convRepo.findByProductIdOrderByUnitNameAsc(id));
-    return "product-form";
+    return "catalog/product-form";
   }
 
   @PostMapping("/{id}/delete")

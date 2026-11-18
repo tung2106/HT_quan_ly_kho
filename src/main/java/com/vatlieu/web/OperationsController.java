@@ -34,7 +34,7 @@ public class OperationsController {
     model.addAttribute("orders", service.orders(keyword, trash));
     model.addAttribute("trash", trash);
     model.addAttribute("keyword", keyword);
-    return "outbound";
+    return "outbound/list";
   }
 
   @PostMapping("/outbound/{id}/{action:trash|restore}")
@@ -69,7 +69,7 @@ public class OperationsController {
     model.addAttribute("unitOptions", units.findAll());
     model.addAttribute("lots", stock.lots(current.owner()));
     model.addAttribute("products", products.findByActiveTrueOrderByNameAsc());
-    return "outbound-form";
+    return "outbound/form";
   }
 
   @PostMapping("/outbound")
@@ -89,7 +89,7 @@ public class OperationsController {
       model.addAttribute("lots", stock.lots(current.owner()));
       model.addAttribute("products", products.findByActiveTrueOrderByNameAsc());
       if (form.getItems().isEmpty()) form.getItems().add(new PurchaseItemForm());
-      return "outbound-form";
+      return "outbound/form";
     }
   }
 
@@ -97,7 +97,7 @@ public class OperationsController {
   public String detail(@PathVariable long id, Model model, RedirectAttributes flash) {
     try {
       model.addAttribute("order", service.detail(id));
-      return "outbound-detail";
+      return "outbound/detail";
     } catch (IllegalArgumentException e) {
       flash.addFlashAttribute("error", e.getMessage());
       return "redirect:/outbound";

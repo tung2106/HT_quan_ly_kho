@@ -16,18 +16,18 @@ public class AccountController {
 
   @GetMapping("/login")
   public String login() {
-    return "login";
+    return "account/login";
   }
 
   // Yêu cầu bị từ chối có thể được chuyển tiếp từ POST hoặc phương thức khác.
   @RequestMapping("/error/403")
   public String forbidden() {
-    return "forbidden";
+    return "account/forbidden";
   }
 
   @GetMapping("/account/password")
   public String password() {
-    return "password";
+    return "account/password";
   }
 
   @PostMapping("/account/password")
@@ -45,14 +45,14 @@ public class AccountController {
       return "redirect:/login?changed";
     } catch (IllegalArgumentException e) {
       model.addAttribute("error", e.getMessage());
-      return "password";
+      return "account/password";
     }
   }
 
   @GetMapping("/admin/users")
   public String users(Model model) {
     model.addAttribute("users", accounts.list());
-    return "users";
+    return "account/users";
   }
 
   @PostMapping("/admin/users")

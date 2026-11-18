@@ -20,7 +20,7 @@ public class CategoryController {
   @GetMapping
   public String list(Model m) {
     m.addAttribute("categories", repo.findAllByOrderByNameAsc());
-    return "categories";
+    return "catalog/categories";
   }
 
   @PostMapping

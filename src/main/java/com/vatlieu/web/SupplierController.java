@@ -22,7 +22,7 @@ public class SupplierController {
     m.addAttribute("deleted", deleted);
     m.addAttribute("keyword", keyword.trim());
     m.addAttribute("suppliers", service.search(!deleted, keyword));
-    return "suppliers";
+    return "catalog/suppliers";
   }
 
   @PostMapping("/{id}/edit")

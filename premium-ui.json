@@ -1,7 +1,7 @@
 {
   "profile": "product-admin",
   "sourceRoots": ["src/main/resources"],
-  "canonicalMap": "UX-CONTRACT.md",
+  "canonicalMap": "docs/giao-dien/UX-CONTRACT.md",
   "requiredCapabilities": ["Select/Listbox", "Date", "Form", "Scrollbar", "Toast", "CRUD"],
   "ownership": {
     "Select/Listbox": "native",

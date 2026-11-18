@@ -20,7 +20,7 @@ function page(t, template, selected = false) {
 }
 
 test('Bấm Tất toán chỉ chọn thu đủ; bỏ chọn giữ tiền từng phần và dữ liệu gửi đúng', (t) => {
-  const { w, control, amount, button } = page(t, 'outbound-form.html');
+  const { w, control, amount, button } = page(t, 'outbound/form.html');
   control.form.addEventListener('submit', () => assert.fail('Chọn tất toán không được gửi phiếu'));
   button.click();
   assert.equal(button.getAttribute('aria-pressed'), 'true');
@@ -37,7 +37,7 @@ test('Bấm Tất toán chỉ chọn thu đủ; bỏ chọn giữ tiền từng 
 });
 
 test('Trang trả lỗi giữ lựa chọn tất toán và vẫn bỏ chọn được', (t) => {
-  const { amount, button } = page(t, 'outbound-form.html', true);
+  const { amount, button } = page(t, 'outbound/form.html', true);
   assert.equal(button.getAttribute('aria-pressed'), 'true');
   assert.equal(amount.disabled, true);
   button.click();
@@ -46,7 +46,7 @@ test('Trang trả lỗi giữ lựa chọn tất toán và vẫn bỏ chọn đ�
 });
 
 test('Ô tích tất toán của nhập hàng vẫn khóa và mở số tiền đúng', (t) => {
-  const { w, control, amount } = page(t, 'purchase-form.html', true);
+  const { w, control, amount } = page(t, 'purchases/form.html', true);
   assert.equal(amount.disabled, true);
   control.checked = false;
   control.dispatchEvent(new w.Event('change'));

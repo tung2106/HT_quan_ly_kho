@@ -12,14 +12,14 @@ múi giờ nghiệp vụ Asia/Ho_Chi_Minh (UTC+7), lịch Gregorian. Mục tiêu
 | Quyền OWNER/STAFF | AGENTS.md; config/SecurityConfig.java; service/CurrentUser.java | 09/11/2026 |
 | Tiền, lô, nhập/xuất, tất toán | AGENTS.md; PurchaseService.java; OperationsService.java; InventoryMath.java | 09/11/2026 |
 | Ngừng dùng và khôi phục | ProductService.java; SupplierService.java; AGENTS.md | 09/11/2026 |
-| Định hướng và cách làm | HUONG-DAN-DU-AN.md; yêu cầu người dùng trong chat | 09/11/2026 |
+| Định hướng và cách làm | [Hướng dẫn dự án](../HUONG-DAN-DU-AN.md); yêu cầu người dùng trong chat | 09/11/2026 |
 
 Các đường dẫn Java ở `src/main/java/com/vatlieu/`. Quy tắc nghiệp vụ tham chiếu nguồn trên,
 không định nghĩa lại trong tài liệu giao diện. Chưa có luồng pháp lý/thanh toán bên ngoài.
 
 ## Visual contract
 
-Theo DESIGN.md; token runtime là sky.css, không sinh bản CSS thứ hai.
+Theo [thiết kế giao diện](DESIGN.md); token runtime là sky.css, không sinh bản CSS thứ hai.
 Theme Sáng/Tối dùng cùng token, nhịp bố cục và các màu thu/trả. Mọi quyết định dùng chung
 phải cập nhật CSS và DESIGN trong cùng thay đổi.
 
@@ -122,10 +122,10 @@ còn lại, chưa được bảo đảm trong toàn bộ app. Không thêm quy t
 ## Verification
 
 - `mvn test`, bật RUN_POSTGRES_TESTS với CSDL kiểm thử riêng; `node --test src/test/js/*.test.cjs`.
-- Lint DESIGN bằng `npx -p @google/design.md designmd lint DESIGN.md`.
+- Lint DESIGN bằng `npx -p @google/design.md designmd lint docs/giao-dien/DESIGN.md`.
 - Audit skill: `py -3 <frontend-design-premium>/scripts/audit_project.py . --mode strict`.
 - Kiểm tra điện thoại 360/390px và desktop, mở popup native, Tab/Escape, tên dài, tiền lớn,
   xóa tìm kiếm, dialog Hủy, quyền STAFF. Không gửi thử phiếu trên dữ liệu thật.
 - Các giới hạn chưa kiểm tra phải báo rõ; static audit không thay kiểm tra trình duyệt.
 - Kết quả và các nhận diện nhầm của audit tĩnh: xem mục cập nhật gần nhất trong
-  `KIEM-TRA-CHAT-LUONG.md`; không coi strict audit là đạt khi còn báo lỗi.
+  [báo cáo kiểm thử](../kiem-thu/KIEM-TRA-CHAT-LUONG.md); không coi strict audit là đạt khi còn báo lỗi.
