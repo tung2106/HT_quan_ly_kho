@@ -189,9 +189,17 @@ class AccessPostgresTest {
     mvc
       .perform(get("/login"))
       .andExpect(status().isOk())
+      .andExpect(content().string(not(containsString("/register"))))
       .andExpect(header().string("Referrer-Policy", "no-referrer"))
       .andExpect(header().string("Content-Security-Policy", containsString("script-src 'self';")))
+      .andExpect(header().string("Content-Security-Policy", not(containsString("recaptcha"))))
       .andExpect(header().string("Content-Security-Policy", containsString("form-action 'self'")));
+    for (String path : new String[] { "/register", "/register/verify", "/register/details" }) {
+      mvc.perform(get(path)).andExpect(redirectedUrlPattern("**/login"));
+      mvc
+        .perform(post(path).with(user("acl-owner").roles("OWNER")).with(csrf()))
+        .andExpect(status().isNotFound());
+    }
     mvc
       .perform(post("/admin/users").with(csrf()).param("username", "hacker"))
       .andExpect(status().is3xxRedirection());

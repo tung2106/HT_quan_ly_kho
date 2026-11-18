@@ -13,7 +13,6 @@
   }
 
   function setup(field) {
-    if (field.closest('.g-recaptcha')) return;
     if (initialized.has(field) || ['hidden', 'submit', 'button'].includes(field.type)) return;
     initialized.add(field);
     // Dòng nhân bản cần ID riêng để nhãn và lỗi không trỏ về dòng đầu tiên.

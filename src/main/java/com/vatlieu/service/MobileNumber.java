@@ -14,12 +14,4 @@ final class MobileNumber {
     }
     return name;
   }
-
-  static String require(String input) {
-    String phone = login(input);
-    if (!phone.matches("0[35789][0-9]{8}")) throw new IllegalArgumentException(
-      "Hãy nhập số di động Việt Nam bắt đầu bằng 0 hoặc +84."
-    );
-    return phone;
-  }
 }

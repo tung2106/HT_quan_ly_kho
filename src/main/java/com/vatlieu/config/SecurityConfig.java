@@ -38,31 +38,13 @@ public class SecurityConfig {
       .headers(headers ->
         headers
           .referrerPolicy(policy -> policy.policy(ReferrerPolicy.NO_REFERRER))
-          .addHeaderWriter((request, response) -> {
-            String scripts = request.getRequestURI().equals(request.getContextPath() + "/register")
-              ? "script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; " +
-                "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; " +
-                "connect-src 'self' https://www.google.com/recaptcha/; "
-              : "script-src 'self'; ";
-            response.setHeader(
-              "Content-Security-Policy",
-              "default-src 'self'; " + scripts + PAGE_POLICY
-            );
-          })
+          .contentSecurityPolicy(csp ->
+            csp.policyDirectives("default-src 'self'; script-src 'self'; " + PAGE_POLICY)
+          )
       )
       .authorizeHttpRequests(auth ->
         auth
-          .requestMatchers(
-            "/login",
-            "/register",
-            "/register/verify",
-            "/register/details",
-            "/css/**",
-            "/js/**",
-            "/images/**",
-            "/error",
-            "/error/**"
-          )
+          .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/error", "/error/**")
           .permitAll()
           .requestMatchers("/account/password", "/logout")
           .authenticated()

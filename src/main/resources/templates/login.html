@@ -15,11 +15,8 @@
           Đã đổi mật khẩu. Hãy đăng nhập bằng mật khẩu mới.
         </p>
         <p class="alert alert-success" th:if="${param.logout}">Đã đăng xuất.</p>
-        <p class="alert alert-success" role="status" th:if="${param.registered}">
-          Đã xác thực số điện thoại. Khi quản lý duyệt tài khoản, bạn có thể đăng nhập tại đây.
-        </p>
         <form novalidate method="post" th:action="@{/login}">
-          <label for="username" class="form-label">Số điện thoại hoặc tên đăng nhập cũ</label>
+          <label for="username" class="form-label">Tên đăng nhập hoặc số điện thoại</label>
           <input
             id="username"
             name="username"
@@ -39,9 +36,6 @@
           />
           <button class="btn btn-primary w-100">Đăng nhập</button>
         </form>
-        <a class="btn btn-outline-primary mt-3" th:href="@{/register}">
-          Đăng ký bằng số điện thoại
-        </a>
       </div>
     </main>
   </body>
