@@ -821,6 +821,15 @@ a,
   font-size: 0.85rem;
   margin: 4px 0 8px;
 }
+.ui-secret > button {
+  display: grid;
+  place-items: center;
+  min-width: 46px;
+  min-height: 46px;
+}
+.ui-secret > input::-ms-reveal {
+  display: none;
+}
 .ui-dialog {
   width: min(440px, calc(100% - 28px));
   max-height: 85dvh;

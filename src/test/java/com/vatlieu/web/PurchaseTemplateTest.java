@@ -27,6 +27,9 @@ class PurchaseTemplateTest {
   PurchaseService service;
 
   @MockBean
+  com.vatlieu.service.PurchaseTrashService trashService;
+
+  @MockBean
   ProductRepository productRepo;
 
   @Test

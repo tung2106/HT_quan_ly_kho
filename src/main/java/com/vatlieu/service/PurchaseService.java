@@ -39,10 +39,10 @@ public class PurchaseService {
 
   @Transactional(readOnly = true)
   @org.springframework.security.access.prepost.PreAuthorize("hasRole('OWNER')")
-  public List<PurchaseOrder> history(String keyword) {
+  public List<PurchaseOrder> history(String keyword, boolean trashed) {
     String query = SearchText.normalize(keyword);
     return orderRepo
-      .findAllByOrderByOrderDateDescIdDesc()
+      .findByTrashedOrderByOrderDateDescIdDesc(trashed)
       .stream()
       .filter(
         order ->

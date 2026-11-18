@@ -1,14 +1,32 @@
 <!doctype html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-  <head th:replace="~{fragments :: head('Nhập hàng')}"></head>
+  <head th:replace="~{fragments :: head(${trash ? 'Thùng rác phiếu nhập' : 'Nhập hàng'})}"></head>
   <body>
     <main class="container py-3">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h4 mb-0">Đơn nhập hàng</h1>
-        <a class="btn btn-primary" th:href="@{/purchases/new}">+ Nhập hàng</a>
+      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0" th:text="${trash ? 'Thùng rác phiếu nhập' : 'Đơn nhập hàng'}"></h1>
+        <div class="d-flex flex-wrap gap-2">
+          <a th:if="${trash}" class="btn btn-outline-secondary" th:href="@{/purchases}">
+            Lịch sử nhập
+          </a>
+          <a
+            th:unless="${trash}"
+            class="btn btn-outline-secondary"
+            th:href="@{/purchases(trash=true)}"
+          >
+            Thùng rác
+          </a>
+          <a th:unless="${trash}" class="btn btn-primary" th:href="@{/purchases/new}">
+            + Nhập hàng
+          </a>
+        </div>
       </div>
       <div th:replace="~{fragments :: alerts}"></div>
+      <p th:if="${trash}" class="text-muted">
+        Khôi phục phiếu để tính lại số lượng, vốn và công nợ theo lô đã nhập.
+      </p>
       <form novalidate method="get" th:action="@{/purchases}" class="card card-body mb-3">
+        <input th:if="${trash}" type="hidden" name="trash" value="true" />
         <label class="form-label" for="purchase-search">Tìm người bán, tên hàng hoặc mã lô</label>
         <input
           id="purchase-search"
@@ -21,7 +39,7 @@
       </form>
       <p
         th:if="${#lists.isEmpty(orders)}"
-        th:text="${#strings.isEmpty(keyword) ? 'Chưa có phiếu nhập. Bấm Nhập hàng để ghi lần đầu.' : 'Không tìm thấy phiếu nhập phù hợp.'}"
+        th:text="${!#strings.isEmpty(keyword) ? 'Không tìm thấy phiếu nhập phù hợp.' : (trash ? 'Thùng rác chưa có phiếu nhập.' : 'Chưa có phiếu nhập. Bấm Nhập hàng để ghi lần đầu.')}"
       ></p>
       <div class="card mb-2" th:each="o : ${orders}">
         <div class="card-body py-2">
@@ -58,7 +76,7 @@
             </span>
             <span
               class="text-danger"
-              th:if="${o.total.compareTo(o.paidAmount) > 0}"
+              th:if="${!trash and o.total.compareTo(o.paidAmount) > 0}"
               th:text="'Còn nợ ' + ${#numbers.formatDecimal(o.total.subtract(o.paidAmount),1,'POINT',0,'COMMA')} + ' VNĐ'"
             ></span>
           </div>
@@ -72,11 +90,39 @@
           ></div>
           <a
             class="btn btn-danger w-100 mt-2"
-            th:if="${o.total.compareTo(o.paidAmount) > 0}"
+            th:if="${!trash and o.total.compareTo(o.paidAmount) > 0}"
             th:href="@{/capital(section='debts')} + '#purchase-debt-' + ${o.id}"
           >
             Thanh toán
           </a>
+          <form
+            novalidate
+            class="mt-2"
+            th:if="${trash or o.paidAmount.signum() == 0}"
+            method="post"
+            th:action="${trash} ? @{/purchases/{id}/restore(id=${o.id})} : @{/purchases/{id}/trash(id=${o.id})}"
+            th:attr="data-confirm=${trash ? null : 'Tồn kho, vốn và công nợ sẽ được tính lại khi bỏ phiếu này. Bạn có thể xem và khôi phục phiếu trong Thùng rác.'},data-confirm-title=|Chuyển phiếu nhập #${o.id} vào Thùng rác?|"
+            data-confirm-action="Chuyển vào Thùng rác"
+          >
+            <input
+              th:if="${!#strings.isEmpty(keyword)}"
+              type="hidden"
+              name="keyword"
+              th:value="${keyword}"
+            />
+            <button
+              type="submit"
+              class="btn"
+              data-requires-confirmation
+              th:disabled="${!trash}"
+              th:classappend="${trash ? 'btn-outline-primary' : 'btn-outline-danger'}"
+              th:text="${trash ? 'Khôi phục phiếu' : 'Xóa phiếu'}"
+            ></button>
+            <noscript th:unless="${trash}">Bật JavaScript để xác nhận xóa phiếu.</noscript>
+          </form>
+          <small th:if="${!trash and o.paidAmount.signum() > 0}" class="text-muted d-block mt-2">
+            Phiếu đã trả tiền nên không thể xóa.
+          </small>
         </div>
       </div>
     </main>

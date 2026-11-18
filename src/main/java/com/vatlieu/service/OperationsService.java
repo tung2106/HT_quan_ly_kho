@@ -16,6 +16,7 @@ public class OperationsService {
 
   private final JdbcTemplate jdbc;
   private final CurrentUser current;
+  private final com.vatlieu.repository.BatchRepository batches;
 
   private void lockRequest(UUID key) {
     if (key == null) throw new IllegalArgumentException("Thiếu mã phiếu, hãy mở lại biểu mẫu");
@@ -209,14 +210,7 @@ public class OperationsService {
           actor
         );
       }
-      jdbc.update(
-        """
-        UPDATE product SET avg_cost=(SELECT CASE WHEN SUM(qty_left)>0
-        THEN ROUND(SUM(qty_left*unit_cost)/SUM(qty_left),2) ELSE 0 END FROM batch WHERE product_id=?) WHERE id=?
-        """,
-        line.product(),
-        line.product()
-      );
+      batches.recalculateAverageCost(line.product());
     }
     jdbc.update("UPDATE outbound_order SET cost_amount=? WHERE id=?", totalCost, orderId);
     if (paid.signum() > 0) jdbc.update(
@@ -260,6 +254,9 @@ public class OperationsService {
     );
     if (found.isEmpty()) throw new IllegalArgumentException("Không tìm thấy phiếu");
     Map<String, Object> order = found.get(0);
+    if (purchase && Boolean.TRUE.equals(order.get("trashed"))) throw new IllegalArgumentException(
+      "Phiếu nhập đang ở Thùng rác. Khôi phục phiếu trước khi thanh toán."
+    );
     if (!purchase && !"SALE".equals(order.get("kind"))) throw new IllegalArgumentException(
       "Phiếu hao hụt không thu tiền"
     );
@@ -347,6 +344,7 @@ public class OperationsService {
       UNION ALL
       SELECT 'purchase',o.id,COALESCE(NULLIF(TRIM(o.seller_name),''),s.name,'Chưa ghi tên'),o.total_amount,o.paid_amount,o.total_amount-o.paid_amount
       FROM purchase_order o LEFT JOIN supplier s ON s.id=o.supplier_id
+      WHERE NOT o.trashed
       ORDER BY remaining DESC,id DESC
       """
     );
@@ -415,7 +413,7 @@ public class OperationsService {
       (SELECT COALESCE(SUM(amount),0) FROM cash_payment WHERE outbound_id IS NOT NULL) AS receipts,
       (SELECT COALESCE(SUM(amount),0) FROM cash_payment WHERE purchase_id IS NOT NULL) AS payments,
       (SELECT COALESCE(SUM(total_amount-paid_amount),0) FROM outbound_order WHERE kind='SALE') AS receivable,
-      (SELECT COALESCE(SUM(total_amount-paid_amount),0) FROM purchase_order) AS payable
+      (SELECT COALESCE(SUM(total_amount-paid_amount),0) FROM purchase_order WHERE NOT trashed) AS payable
       """
     );
   }

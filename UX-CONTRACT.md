@@ -70,6 +70,10 @@ và ngôn ngữ theo thiết lập thiết bị; không tự viết combobox/cal
   Trùng mã lô báo lỗi, giữ dữ liệu; gửi lại cùng request_key trả về phiếu đã lưu.
 - Lịch sử nhập/xuất dùng tìm kiếm GET trong URL, chữ có dấu/không dấu tương đương khi tìm.
   Nhân viên vẫn chỉ tìm được phiếu bán do mình lập. Tên lưu không bị bỏ dấu hoặc gộp theo tìm kiếm.
+- Quản lý có thể chuyển phiếu nhập vào Thùng rác sau khi xác nhận số phiếu.
+  Chặn xóa nếu đã trả tiền, xuất bán hoặc ghi hao hụt từ lô. Khi xóa, ghi đối ứng từng lô,
+  tính lại vốn và bỏ khoản phải trả. Khôi phục dùng lại phiếu, ngày nhập, mã lô và giá vốn gốc.
+  Thùng rác có tìm kiếm, xem chi tiết và khôi phục.
 - Trang có một h1 và một vùng main; form cuộn tự nhiên, thanh dưới không che nút cuối.
 - Bảng tồn giữ quan hệ các cột và cuộn ngang trong vùng có tên; không giấu giá trị.
 - Hàng còn và Các lô còn tồn dùng cùng bộ lọc native Tất cả/Vật liệu xây dựng/Nông sản,
@@ -95,7 +99,7 @@ và ngôn ngữ theo thiết lập thiết bị; không tự viết combobox/cal
 - Mỗi phiếu còn nợ có mục Thu/Trả một phần và nút Tất toán. Khi ghi tiền xong hoặc có lỗi,
   ứng dụng trở lại đúng tab thu hoặc trả.
 - Chỉ tự giãn textarea, không để kéo làm vỡ bố cục. Mật khẩu mặc định che,
-  hỗ trợ hiện/ẩn, cho phép dán và trình quản lý mật khẩu.
+  nút mắt riêng cho từng ô khi đăng nhập, đổi và cấp mật khẩu, cho phép dán và trình quản lý mật khẩu.
 
 ## Async and recovery
 

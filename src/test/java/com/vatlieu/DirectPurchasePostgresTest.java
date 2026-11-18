@@ -42,6 +42,9 @@ class DirectPurchasePostgresTest {
   StockService stock;
 
   @Autowired
+  PurchaseTrashService trash;
+
+  @Autowired
   JdbcTemplate jdbc;
 
   @Autowired
@@ -122,7 +125,7 @@ class DirectPurchasePostgresTest {
       assertThat(row.qtyOnHand()).isEqualByComparingTo("11");
       assertThat(row.value()).isEqualByComparingTo("1600");
     });
-    assertThat(purchases.history("anh"))
+    assertThat(purchases.history("anh", false))
       .extracting(com.vatlieu.entity.PurchaseOrder::getId)
       .contains(order1.getId())
       .doesNotContain(order2.getId());
@@ -141,6 +144,135 @@ class DirectPurchasePostgresTest {
       .perform(get("/"))
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Vốn trong hàng còn")));
+  }
+
+  @Test
+  void chuyenPhieuVaoThungRacXemLaiVaKhoiPhuc() throws Exception {
+    var entry = form("Ngô thử " + UUID.randomUUID(), "6.25", "1200");
+    entry.setSellerName("Cô Ánh");
+    var order = purchases.create(entry);
+    em.flush();
+    String path = "/purchases/" + order.getId();
+    String code = order.getLotCode();
+    mvc.perform(post(path + "/trash")).andExpect(status().isForbidden());
+    mvc
+      .perform(get("/purchases").param("keyword", code))
+      .andExpect(content().string(containsString("Chuyển phiếu nhập #" + order.getId())))
+      .andExpect(content().string(containsString(code)));
+    for (int i = 0; i < 2; i++) {
+      mvc.perform(post(path + "/trash").with(csrf())).andExpect(redirectedUrl("/purchases"));
+    }
+    mvc
+      .perform(get("/purchases").param("keyword", "co anh"))
+      .andExpect(content().string(org.hamcrest.Matchers.not(containsString(code))));
+    mvc
+      .perform(get("/purchases").param("trash", "true").param("keyword", "co anh"))
+      .andExpect(content().string(containsString(code)))
+      .andExpect(content().string(containsString("Khôi phục phiếu")))
+      .andExpect(content().string(containsString("7.500 VNĐ")));
+    mvc
+      .perform(get("/purchases").param("trash", "true").param("keyword", "khong trung"))
+      .andExpect(content().string(org.hamcrest.Matchers.not(containsString(code))));
+    for (int i = 0; i < 2; i++) {
+      mvc
+        .perform(post(path + "/restore").with(csrf()))
+        .andExpect(redirectedUrl("/purchases?trash=true"));
+    }
+    mvc
+      .perform(get("/purchases").param("keyword", code))
+      .andExpect(content().string(containsString(code)));
+    mvc
+      .perform(get("/purchases").param("trash", "true").param("keyword", code))
+      .andExpect(content().string(containsString("Không tìm thấy phiếu nhập phù hợp.")));
+  }
+
+  @Test
+  void xoaVaKhoiPhucDungLoVonVaNoSauKhiDaNhapLoKhac() {
+    String name = "Sắn " + UUID.randomUUID();
+    var first = form(name, "4.125", "1000");
+    first.setShippingCost(new BigDecimal("825"));
+    var baseline = operations.summary();
+    var order = purchases.create(first);
+    em.flush();
+    long id = order.getId();
+    long product = order.getItems().get(0).getProduct().getId();
+    trash.setTrashed(id, true);
+    trash.setTrashed(id, true);
+    var afterTrash = operations.summary();
+    baseline.forEach((key, value) ->
+      assertThat((BigDecimal) afterTrash.get(key)).isEqualByComparingTo((BigDecimal) value)
+    );
+    assertThat(stock.findAll())
+      .filteredOn(r -> r.productId() == product)
+      .singleElement()
+      .satisfies(r -> {
+        assertThat(r.qtyOnHand()).isZero();
+        assertThat(r.avgCost()).isZero();
+      });
+    assertThat(operations.debts()).noneMatch(
+      d -> d.get("type").equals("purchase") && d.get("id").equals(id)
+    );
+    assertThat(stock.lots(true)).noneMatch(b -> Long.valueOf(id).equals(b.get("purchase_id")));
+    assertThatThrownBy(() -> operations.pay("purchase", id, BigDecimal.ONE, UUID.randomUUID(), ""))
+      .isInstanceOf(IllegalArgumentException.class)
+      .hasMessageContaining("Thùng rác");
+    em.clear();
+    purchases.create(form(name, "4.125", "2000"));
+    em.flush();
+    trash.setTrashed(id, false);
+    trash.setTrashed(id, false);
+    assertThat(stock.findAll())
+      .filteredOn(r -> r.productId() == product)
+      .singleElement()
+      .satisfies(r -> {
+        assertThat(r.qtyOnHand()).isEqualByComparingTo("8.25");
+        assertThat(r.value()).isEqualByComparingTo("13200");
+        assertThat(r.avgCost()).isEqualByComparingTo("1600");
+      });
+    assertThat((BigDecimal) operations.summary().get("payable")).isEqualByComparingTo(
+      ((BigDecimal) baseline.get("payable")).add(new BigDecimal("13200"))
+    );
+    assertThat(operations.debts()).anyMatch(
+      d -> d.get("type").equals("purchase") && d.get("id").equals(id)
+    );
+    assertThat(
+      jdbc.queryForObject(
+        "SELECT COUNT(*) FROM stock_transaction WHERE tx_type='ADJUSTMENT' AND ref_id=?",
+        Long.class,
+        id
+      )
+    ).isEqualTo(2);
+  }
+
+  @Test
+  void chanXoaPhieuDaTraDaBanHoacDaHaoHut() {
+    var paid = form("Lô đã trả " + UUID.randomUUID(), "3", "10");
+    paid.setPaidAmount(BigDecimal.ONE);
+    var paidOrder = purchases.create(paid);
+    em.flush();
+    assertThatThrownBy(() -> trash.setTrashed(paidOrder.getId(), true)).hasMessageContaining(
+      "đã trả tiền"
+    );
+    for (String kind : java.util.List.of("SALE", "WASTE")) {
+      var order = purchases.create(form("Lô " + UUID.randomUUID(), "3", "10"));
+      em.flush();
+      var sale = new OutboundForm();
+      sale.setKind(kind);
+      sale.setNote("Kiểm thử");
+      sale.setCustomer("Khách thử");
+      var row = new PurchaseItemForm();
+      row.setProductId(order.getItems().get(0).getProduct().getId());
+      row.setQty("SALE".equals(kind) ? new BigDecimal("3") : BigDecimal.ONE);
+      row.setUnitPrice(BigDecimal.TEN);
+      sale.getItems().add(row);
+      operations.create(sale);
+      var before = operations.summary();
+      assertThatThrownBy(() -> trash.setTrashed(order.getId(), true)).hasMessageContaining(
+        "xuất bán hoặc ghi hao hụt"
+      );
+      assertThat(purchases.history(order.getLotCode(), true)).isEmpty();
+      assertThat(operations.summary()).isEqualTo(before);
+    }
   }
 
   @Test

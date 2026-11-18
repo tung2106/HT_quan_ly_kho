@@ -2,6 +2,17 @@
   const initialized = new WeakSet();
   let sequence = 0;
   const names = { productId: 'Sản phẩm', name: 'Tên', phone: 'Số điện thoại', note: 'Ghi chú' };
+  const icons = document.currentScript?.dataset.icons || '/images/ui-icons.svg';
+
+  function setEye(action, visible, label) {
+    if (!action.firstElementChild) {
+      action.innerHTML =
+        '<svg class="ui-icon" width="22" height="22" aria-hidden="true" focusable="false"><use></use></svg>';
+    }
+    action.querySelector('use').setAttribute('href', `${icons}#${visible ? 'eye-off' : 'eye'}`);
+    action.setAttribute('aria-label', label);
+    action.title = label;
+  }
 
   function button(text, label) {
     const node = document.createElement('button');
@@ -52,12 +63,19 @@
       group.className = secret ? 'ui-secret mb-2' : 'ui-search mb-2';
       field.before(group);
       group.append(field);
-      field.classList.remove('mb-2');
+      if (field.classList.contains('mb-3'))
+        group.className = group.className.replace('mb-2', 'mb-3');
+      field.classList.remove('mb-2', 'mb-3');
       const action = button(
         secret ? 'Hiện' : '×',
         secret ? 'Hiện mật khẩu' : 'Xóa nội dung tìm kiếm'
       );
       group.append(action);
+      if (secret) {
+        action.setAttribute('aria-controls', field.id);
+        action.setAttribute('aria-pressed', 'false');
+        setEye(action, false, 'Hiện mật khẩu');
+      }
       const update = () => {
         if (!secret) action.hidden = !field.value;
       };
@@ -65,9 +83,10 @@
       action.addEventListener('click', () => {
         if (secret) {
           const show = field.type === 'password';
+          const { selectionStart, selectionEnd, selectionDirection } = field;
           field.type = show ? 'text' : 'password';
-          action.textContent = show ? 'Ẩn' : 'Hiện';
-          action.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+          field.setSelectionRange(selectionStart, selectionEnd, selectionDirection);
+          setEye(action, show, show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
           action.setAttribute('aria-pressed', String(show));
         } else {
           field.value = '';
@@ -221,6 +240,10 @@
   );
   document.querySelectorAll('form').forEach((form) => {
     form.noValidate = true;
+    if (form.dataset.confirm && typeof dialog.showModal === 'function') {
+      const confirmButton = form.querySelector('[data-requires-confirmation]');
+      if (confirmButton) confirmButton.disabled = false;
+    }
   });
   document.addEventListener('input', (event) => {
     // Chờ bộ định dạng tiền kiểm tra customValidity trước khi cập nhật lỗi.

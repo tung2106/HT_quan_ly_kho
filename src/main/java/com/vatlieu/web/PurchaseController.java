@@ -4,6 +4,7 @@ import com.vatlieu.form.PurchaseForm;
 import com.vatlieu.form.PurchaseItemForm;
 import com.vatlieu.repository.ProductRepository;
 import com.vatlieu.service.PurchaseService;
+import com.vatlieu.service.PurchaseTrashService;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -18,11 +19,17 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class PurchaseController {
 
   private final PurchaseService service;
+  private final PurchaseTrashService trashService;
   private final ProductRepository productRepo;
 
   @GetMapping
-  public String list(@RequestParam(defaultValue = "") String keyword, Model m) {
-    m.addAttribute("orders", service.history(keyword));
+  public String list(
+    @RequestParam(defaultValue = "") String keyword,
+    @RequestParam(defaultValue = "false") boolean trash,
+    Model m
+  ) {
+    m.addAttribute("orders", service.history(keyword, trash));
+    m.addAttribute("trash", trash);
     m.addAttribute("keyword", keyword);
     return "purchases";
   }
@@ -37,6 +44,28 @@ public class PurchaseController {
     m.addAttribute("form", f);
     populate(m);
     return "purchase-form";
+  }
+
+  @PostMapping("/{id}/{action:trash|restore}")
+  public String changeTrash(
+    @PathVariable long id,
+    @PathVariable String action,
+    @RequestParam(defaultValue = "") String keyword,
+    RedirectAttributes ra
+  ) {
+    boolean trash = action.equals("trash");
+    try {
+      trashService.setTrashed(id, trash);
+      ra.addFlashAttribute(
+        "msg",
+        trash ? "Đã chuyển phiếu nhập vào Thùng rác." : "Đã khôi phục phiếu nhập."
+      );
+    } catch (IllegalArgumentException e) {
+      ra.addFlashAttribute("error", e.getMessage());
+    }
+    if (!trash) ra.addAttribute("trash", true);
+    if (!keyword.isBlank()) ra.addAttribute("keyword", keyword);
+    return "redirect:/purchases";
   }
 
   @PostMapping

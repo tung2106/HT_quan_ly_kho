@@ -28,6 +28,7 @@ public class PurchaseOrder {
   private String lotCode;
 
   private java.util.UUID requestKey;
+  private boolean trashed;
 
   private LocalDate orderDate = LocalDate.now();
   private BigDecimal shippingCost = BigDecimal.ZERO;

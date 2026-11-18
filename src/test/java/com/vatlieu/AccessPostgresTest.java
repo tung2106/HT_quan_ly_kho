@@ -242,6 +242,7 @@ class AccessPostgresTest {
     for (String path : new String[] {
       "/capital",
       "/purchases",
+      "/purchases?trash=true",
       "/purchases/new",
       "/categories",
       "/suppliers",
@@ -257,6 +258,8 @@ class AccessPostgresTest {
     for (String path : new String[] {
       "/products",
       "/products/1/delete",
+      "/purchases/1/trash",
+      "/purchases/1/restore",
       "/categories",
       "/categories/1/edit",
       "/categories/1/delete",

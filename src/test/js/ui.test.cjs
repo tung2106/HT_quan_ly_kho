@@ -180,9 +180,16 @@ test('Hiện mật khẩu chỉ đổi cách nhìn, giữ giá trị và focus',
   const w = page(t, '<label>Mật khẩu</label><input type="password" value="test-password">');
   const input = w.document.querySelector('input');
   const toggle = w.document.querySelector('.ui-secret button');
+  assert.equal(toggle.getAttribute('aria-controls'), input.id);
+  assert.equal(toggle.getAttribute('aria-label'), 'Hiện mật khẩu');
+  assert.equal(toggle.querySelector('use').getAttribute('href').split('#').pop(), 'eye');
+  input.setSelectionRange(2, 5);
   toggle.click();
   assert.equal(input.type, 'text');
   assert.equal(toggle.getAttribute('aria-pressed'), 'true');
+  assert.equal(toggle.getAttribute('aria-label'), 'Ẩn mật khẩu');
+  assert.equal(toggle.querySelector('use').getAttribute('href').split('#').pop(), 'eye-off');
+  assert.deepEqual([input.selectionStart, input.selectionEnd], [2, 5]);
   toggle.click();
   assert.equal(input.type, 'password');
   assert.equal(input.value, 'test-password');
