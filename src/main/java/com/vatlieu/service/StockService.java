@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 /** Đọc tồn kho từ view v_stock (tính từ lịch sử giao dịch). */
 @Service
 @RequiredArgsConstructor
+@WarehouseAccess
 public class StockService {
 
   private final JdbcTemplate jdbc;

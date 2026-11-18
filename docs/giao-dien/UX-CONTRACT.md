@@ -52,11 +52,10 @@ và ngôn ngữ theo thiết lập thiết bị; không tự viết combobox/cal
 
 - Dùng một thanh chức năng có nhãn và aria-current theo nhóm. Dưới 900px thanh nằm ở cạnh dưới.
   Từ 900px thanh nằm trên đầu trang. Sản phẩm và lô thuộc Hàng còn, phiếu nhập thuộc Nhập hàng.
-- Cài đặt dùng chung ở góc phải: Sáng/Tối, Sản phẩm và Quản lý tài khoản cho OWNER,
-  Đổi mật khẩu và Đăng xuất cho người đã đăng nhập. STAFF không thấy công cụ quản lý;
-  vẫn xem giá bán từ Hàng còn. Quyền máy chủ giữ nguyên.
+- Cài đặt ở góc phải có Sáng/Tối, Sản phẩm, Đổi mật khẩu của tôi và Đăng xuất cho cả hai vai trò.
+  Quản lý tài khoản chỉ dành cho OWNER. Xóa nhân viên cần xác nhận tên tài khoản.
 - Trang chủ chia công việc thành Ghi giao dịch, Theo dõi hàng & tiền và Tra cứu phiếu.
-  Quản lý thấy Nhập hàng, Xuất bán và Ghi hao hụt. Nhân viên thấy Xuất bán.
+  Cả hai vai trò đều thấy Nhập hàng, Xuất bán và Ghi hao hụt.
   Menu dùng dialog native: focus vào Đóng, Escape hoặc chạm nền bên ngoài để đóng,
   trả focus về nút Cài đặt; kéo từ bên trong ra ngoài không đóng nhầm,
   không gửi hoặc xóa dữ liệu form đang nhập khi mở/đóng hay đổi theme.
@@ -70,16 +69,16 @@ và ngôn ngữ theo thiết lập thiết bị; không tự viết combobox/cal
   Mã lô cấp trước có thể sửa; số thứ tự được phép có khoảng trống khi mở form rồi không lưu.
   Trùng mã lô báo lỗi, giữ dữ liệu; gửi lại cùng request_key trả về phiếu đã lưu.
 - Lịch sử nhập/xuất dùng tìm kiếm GET trong URL, chữ có dấu/không dấu tương đương khi tìm.
-  Nhân viên vẫn chỉ tìm được phiếu bán do mình lập. Tên lưu không bị bỏ dấu hoặc gộp theo tìm kiếm.
+  Hai vai trò đều tra được phiếu của cả cửa hàng. Tên lưu giữ nguyên dấu tiếng Việt.
   Mở Chi tiết phiếu nhập để xem số lượng, ghi chú và nút xử lý phiếu. Nút Thanh toán
   của phiếu còn nợ luôn hiển thị ngay trên danh sách.
-- Quản lý có thể chuyển phiếu nhập vào Thùng rác sau khi xác nhận số phiếu.
+- Cả hai vai trò có thể chuyển phiếu nhập vào Thùng rác sau khi xác nhận số phiếu.
   Chặn xóa nếu đã trả tiền, xuất bán hoặc ghi hao hụt từ lô. Khi xóa, ghi đối ứng từng lô,
   tính lại vốn và bỏ khoản phải trả. Khôi phục dùng lại phiếu, ngày nhập, mã lô và giá vốn gốc.
   Thùng rác có tìm kiếm, xem chi tiết và khôi phục.
-- Ở lịch sử xuất, chỉ quản lý được chuyển phiếu bán chưa thu tiền vào Thùng rác sau khi xác nhận.
+- Ở lịch sử xuất, cả hai vai trò được chuyển phiếu bán chưa thu tiền vào Thùng rác sau khi xác nhận.
   Hàng trở về đúng các lô đã xuất, phiếu rời doanh thu, giá vốn đã bán và công nợ.
-  Khôi phục chỉ thành công khi từng lô gốc còn đủ số lượng. Nhân viên chỉ thấy phiếu đang sử dụng của mình.
+  Khôi phục chỉ thành công khi từng lô gốc còn đủ số lượng.
 - Trang có một h1 và một vùng main; form cuộn tự nhiên, thanh dưới không che nút cuối.
 - Bảng tồn giữ quan hệ các cột và cuộn ngang trong vùng có tên; không giấu giá trị.
 - Hàng còn và Các lô còn tồn dùng cùng bộ lọc native Tất cả/Vật liệu xây dựng/Nông sản,

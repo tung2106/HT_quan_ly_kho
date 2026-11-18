@@ -98,7 +98,7 @@ Kế tiếp là vốn, tiền đã chi, tiền đã thu, nhóm theo dõi hàng v
 Cài đặt mở từ góc phải. Hộp thoại chia thành Giao diện, Quản lý và Tài khoản.
 Trên màn hình dưới 900px, thanh chức năng nằm ở cạnh dưới, chừa khoảng trống cho thanh hệ thống.
 Từ 900px, cùng thanh chức năng nằm ở đầu trang, giữa tên cửa hàng và Cài đặt.
-Số mục hiển thị theo quyền, tối đa năm mục. Biểu tượng luôn đi cùng nhãn.
+Thanh chức năng có năm mục cho cả quản lý và nhân viên. Biểu tượng luôn đi cùng nhãn.
 Danh sách phiếu có một nút chính để ghi giao dịch. Ô tìm kiếm và nút Tìm nằm cạnh nhau.
 Phiếu nhập hiển thị ngay hàng, người bán, lô, tổng, số đã trả và nợ còn lại.
 Người dùng mở chi tiết để xem các dòng hàng hoặc xử lý phiếu trong Thùng rác.

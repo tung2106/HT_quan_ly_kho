@@ -28,7 +28,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@WithMockUser(username = "direct-suite-owner", roles = "OWNER")
+@WithMockUser(username = "direct-suite-staff", roles = "STAFF")
 @EnabledIfEnvironmentVariable(named = "RUN_POSTGRES_TESTS", matches = "true")
 class DirectPurchasePostgresTest {
 
@@ -59,7 +59,7 @@ class DirectPurchasePostgresTest {
   @BeforeEach
   void actor() {
     jdbc.update(
-      "INSERT INTO app_user(username,full_name,password,role,must_change_password) VALUES ('direct-suite-owner','Kiểm thử','unused','OWNER',false)"
+      "INSERT INTO app_user(username,full_name,password,role,must_change_password) VALUES ('direct-suite-staff','Kiểm thử','unused','STAFF',false)"
     );
   }
 

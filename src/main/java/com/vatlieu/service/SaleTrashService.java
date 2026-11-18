@@ -5,12 +5,12 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@WarehouseAccess
 public class SaleTrashService {
 
   private final JdbcTemplate jdbc;
@@ -29,7 +29,6 @@ public class SaleTrashService {
   ) {}
 
   @Transactional
-  @PreAuthorize("hasRole('OWNER')")
   public void setTrashed(long id, boolean trash) {
     // Khóa cùng phiếu với luồng thu tiền, rồi khóa sản phẩm theo thứ tự của luồng xuất.
     var state = jdbc.queryForList(

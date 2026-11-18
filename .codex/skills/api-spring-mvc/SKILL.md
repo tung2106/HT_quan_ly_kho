@@ -16,8 +16,8 @@ description:
    giữ lại giá trị hữu ích và báo cụ thể trường hoặc điều kiện chưa đạt.
 3. **Kiểm tra quyền ở máy chủ.** Đối chiếu
    [SecurityConfig](../../../src/main/java/com/vatlieu/config/SecurityConfig.java) và service xử lý
-   phiếu. Quản lý được sử dụng Thùng rác. Nhân viên chỉ xem phiếu bán đang sử dụng do mình tạo. Kiểm
-   tra cả truy cập thẳng theo ID và dữ liệu trả về, kể cả giá vốn.
+   phiếu. Hai vai trò cùng quyền nghiệp vụ kho, kể cả giá vốn và Thùng rác. Chỉ quản lý được xử lý tài khoản.
+   Kiểm tra cả người thực hiện và đối tượng được xóa hoặc đặt lại mật khẩu (chỉ nhân viên).
 4. **Kiểm tra với MockMvc.** Thử khách chưa đăng nhập, nhân viên và quản lý. Với POST, thử thiếu
    CSRF, sai dữ liệu và gửi thành công. Kiểm tra mã HTTP, trang chuyển đến và việc sổ kho có thay
    đổi đúng một lần.

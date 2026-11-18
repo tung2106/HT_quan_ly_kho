@@ -19,7 +19,7 @@
       </header>
       <h2 class="h5 mt-3 mb-3">Ghi giao dịch</h2>
       <div class="home-grid">
-        <a class="home-tile home-primary" th:if="${isOwner}" th:href="@{/purchases/new}">
+        <a class="home-tile home-primary" th:href="@{/purchases/new}">
           <span class="home-icon"><svg th:replace="~{fragments :: icon('in')}"></svg></span>
           <strong>Nhập hàng</strong>
         </a>
@@ -27,7 +27,7 @@
           <span class="home-icon"><svg th:replace="~{fragments :: icon('out')}"></svg></span>
           <strong>Xuất bán</strong>
         </a>
-        <a class="home-tile" th:if="${isOwner}" th:href="@{/outbound/new(kind='WASTE')}">
+        <a class="home-tile" th:href="@{/outbound/new(kind='WASTE')}">
           <span class="home-icon"><svg th:replace="~{fragments :: icon('leaf')}"></svg></span>
           <strong>Ghi hao hụt</strong>
         </a>
@@ -62,27 +62,27 @@
       <div class="home-grid">
         <a class="home-tile" th:href="@{/stock}">
           <span class="home-icon"><svg th:replace="~{fragments :: icon('stock')}"></svg></span>
-          <strong th:text="${isOwner ? 'Hàng còn & vốn' : 'Hàng còn'}"></strong>
+          <strong>Hàng còn &amp; vốn</strong>
         </a>
-        <a class="home-tile" th:if="${isOwner}" th:href="@{/stock/lots}">
+        <a class="home-tile" th:href="@{/stock/lots}">
           <span class="home-icon"><svg th:replace="~{fragments :: icon('stock')}"></svg></span>
           <strong>Các lô còn tồn</strong>
         </a>
-        <a class="home-tile" th:if="${isOwner}" th:href="@{/capital}">
+        <a class="home-tile" th:href="@{/capital}">
           <span class="home-icon"><svg th:replace="~{fragments :: icon('money')}"></svg></span>
           <strong>Vốn &amp; công nợ</strong>
         </a>
       </div>
       <h2 class="h5 mt-4 mb-3">Tra cứu phiếu</h2>
       <div class="home-history-links">
-        <a th:if="${isOwner}" th:href="@{/purchases}">
+        <a th:href="@{/purchases}">
           <svg th:replace="~{fragments :: icon('in')}"></svg>
           Đã nhập của ai
           <span aria-hidden="true">→</span>
         </a>
         <a th:href="@{/outbound}">
           <svg th:replace="~{fragments :: icon('receipt')}"></svg>
-          <span th:text="${isOwner ? 'Đã bán cho ai' : 'Phiếu bán của tôi'}"></span>
+          <span>Đã bán cho ai</span>
           <span aria-hidden="true">→</span>
         </a>
       </div>

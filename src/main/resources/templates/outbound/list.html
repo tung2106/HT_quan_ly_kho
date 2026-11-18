@@ -7,18 +7,14 @@
       <header class="page-heading">
         <h1 th:text="${trash ? 'Thùng rác phiếu bán' : 'Hàng đã bán &amp; xuất'}"></h1>
         <div class="page-actions">
-          <a
-            th:if="${isOwner and !trash}"
-            class="btn btn-outline-secondary"
-            th:href="@{/outbound(trash=true)}"
-          >
+          <a th:if="${!trash}" class="btn btn-outline-secondary" th:href="@{/outbound(trash=true)}">
             Thùng rác
           </a>
           <a th:if="${trash}" class="btn btn-outline-secondary" th:href="@{/outbound}">
             Lịch sử xuất
           </a>
           <a
-            th:if="${isOwner and !trash}"
+            th:if="${!trash}"
             class="btn btn-outline-secondary"
             th:href="@{/outbound/new(kind='WASTE')}"
           >
@@ -66,10 +62,7 @@
             th:text="|Giá vốn hao hụt: ${#numbers.formatDecimal(o.cost_amount,1,'POINT',0,'COMMA')} VNĐ|"
           ></span>
         </a>
-        <th:block
-          th:fragment="trashActions(o,trash,keyword)"
-          th:if="${isOwner and o.kind == 'SALE'}"
-        >
+        <th:block th:fragment="trashActions(o,trash,keyword)" th:if="${o.kind == 'SALE'}">
           <form
             novalidate
             method="post"

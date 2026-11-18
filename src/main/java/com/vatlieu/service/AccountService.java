@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,7 +39,7 @@ public class AccountService implements UserDetailsService {
   @Override
   public UserDetails loadUserByUsername(String username) {
     var rows = jdbc.queryForList(
-      "SELECT * FROM app_user WHERE username=?",
+      "SELECT username,password,active,role,auth_version FROM app_user WHERE username=? AND deleted_at IS NULL",
       MobileNumber.login(username)
     );
     if (rows.isEmpty()) throw new UsernameNotFoundException("Thông tin đăng nhập không hợp lệ");
@@ -73,7 +72,7 @@ public class AccountService implements UserDetailsService {
   public List<Map<String, Object>> list() {
     current.requireOwner();
     return jdbc.queryForList(
-      "SELECT id,username,full_name,role,active,pending_approval FROM app_user ORDER BY pending_approval DESC,id"
+      "SELECT id,username,full_name,role,active,pending_approval FROM app_user WHERE deleted_at IS NULL ORDER BY pending_approval DESC,id"
     );
   }
 
@@ -123,27 +122,12 @@ public class AccountService implements UserDetailsService {
   @Transactional
   public void setActive(long id, boolean active) {
     current.requireOwner();
-    if (id == current.id()) throw new IllegalArgumentException(
-      "Không được tự khóa tài khoản đang dùng"
-    );
-    var rows = jdbc.queryForList("SELECT id,role,active FROM app_user ORDER BY id FOR UPDATE");
-    var target = rows
-      .stream()
-      .filter(r -> ((Number) r.get("id")).longValue() == id)
-      .findFirst()
-      .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
-    if (
-      !active &&
-      "OWNER".equals(target.get("role")) &&
-      rows
-        .stream()
-        .filter(r -> "OWNER".equals(r.get("role")) && Boolean.TRUE.equals(r.get("active")))
-        .count() <= 1
-    ) throw new IllegalArgumentException("Phải còn ít nhất một quản lý hoạt động");
-    jdbc.update(
-      "UPDATE app_user SET active=?,pending_approval=false,auth_version=auth_version+1 WHERE id=?",
-      active,
-      id
+    requireStaffUpdated(
+      jdbc.update(
+        "UPDATE app_user SET active=?,pending_approval=false,auth_version=auth_version+1 WHERE id=? AND role='STAFF' AND deleted_at IS NULL",
+        active,
+        id
+      )
     );
   }
 
@@ -151,14 +135,30 @@ public class AccountService implements UserDetailsService {
   public void resetPassword(long id, String password) {
     current.requireOwner();
     validatePassword(password);
-    if (id == current.id()) throw new IllegalArgumentException("Hãy dùng mục Đổi mật khẩu của tôi");
-    if (
+    requireStaffUpdated(
       jdbc.update(
-        "UPDATE app_user SET password=?,must_change_password=true,auth_version=auth_version+1 WHERE id=?",
+        "UPDATE app_user SET password=?,must_change_password=true,auth_version=auth_version+1 WHERE id=? AND role='STAFF' AND deleted_at IS NULL",
         encoder.encode(password),
         id
-      ) == 0
-    ) throw new IllegalArgumentException("Không tìm thấy tài khoản");
+      )
+    );
+  }
+
+  @Transactional
+  public void deleteStaff(long id) {
+    current.requireOwner();
+    requireStaffUpdated(
+      jdbc.update(
+        "UPDATE app_user SET deleted_at=now(),active=false,pending_approval=false,password='!',auth_version=auth_version+1 WHERE id=? AND role='STAFF' AND deleted_at IS NULL",
+        id
+      )
+    );
+  }
+
+  private void requireStaffUpdated(int updated) {
+    if (updated == 0) throw new IllegalArgumentException(
+      "Chỉ có thể cập nhật tài khoản người dùng thường chưa bị xóa"
+    );
   }
 
   @Transactional

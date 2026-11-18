@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@org.springframework.security.access.prepost.PreAuthorize("hasRole('OWNER')")
+@WarehouseAccess
 public class CategoryService {
 
   private final JdbcTemplate jdbc;

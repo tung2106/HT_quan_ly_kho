@@ -66,8 +66,9 @@ Java 17, Spring Boot 3.3, Spring Data JPA, PostgreSQL, Flyway, Thymeleaf + Boots
   số lượng gốc tối đa 3 số lẻ; sau xuất tính lại giá vốn bình quân từ các lô còn lại.
 - Chưa có: giá sỉ theo bậc, kiểm kê điều chỉnh, sửa/hủy/hoàn phiếu, báo cáo theo kỳ,
   quỹ đầu kỳ/vốn góp/rút/chi phí khác, gợi ý giải pháp, triển khai.
-- Đã bổ sung: đăng nhập, quản lý cấp/khóa/đặt lại mật khẩu; OWNER toàn quyền,
-  STAFF chỉ xem tồn/giá bán và tạo/xem phiếu bán của mình; CSRF và kiểm tra quyền máy chủ.
+- OWNER và STAFF cùng quyền nghiệp vụ kho, vốn, công nợ và toàn bộ phiếu. Chỉ OWNER quản trị tài khoản.
+  Xóa hoặc đặt lại mật khẩu từ trang quản trị chỉ áp dụng cho STAFF. Giữ người lập phiếu khi xóa tài khoản.
+  Kiểm tra quyền ở máy chủ, CSRF và thu hồi phiên. Xem bảng quyền trong docs/HUONG-DAN-DU-AN.md.
   Quản lý thêm/sửa/xóa danh mục (chặn xóa khi còn sản phẩm); nút quay lại; phiếu nhập một dòng.
 - Nhà cung cấp: quản lý xóa khỏi danh sách bằng cách ngừng sử dụng; không cho chọn khi nhập mới,
   vẫn giữ tên trên phiếu cũ, công nợ và cho phép trả nợ tiếp.
@@ -78,5 +79,5 @@ Java 17, Spring Boot 3.3, Spring Data JPA, PostgreSQL, Flyway, Thymeleaf + Boots
 - Xuất bán có thể chọn lô cụ thể ở từng dòng; để trống thì tự động FIFO. Bán nhiều lô bằng nhiều dòng.
   Kiểm tra lô thuộc sản phẩm, còn đủ tồn sau quy đổi; trừ và lưu giá vốn lô đã chọn, tính lại bình quân tồn.
   Hao hụt vẫn FIFO. Quản lý xem các lô còn tồn tại /stock/lots (phiếu nhập, NCC, số lượng, giá vốn).
-  Nhân viên chọn lô khi bán nhưng không xem giá vốn; chi tiết phiếu hiển thị các lô thực tế đã xuất.
+  Nhân viên và quản lý đều xem được giá vốn và các lô thực tế đã xuất.
 - Tất toán: phiếu nhập/xuất bán mới có lựa chọn ghi đã trả/thu đủ tổng tiền sau làm tròn (nhập gồm cước). Công nợ có Ghi tiền từng phần và Tất toán phần nợ hiện tại; khóa phiếu, chống gửi trùng, lưu lịch sử thu/trả, không xóa nợ.

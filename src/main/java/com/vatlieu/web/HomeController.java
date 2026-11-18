@@ -12,12 +12,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class HomeController {
 
   private final StockService stockService;
-  private final com.vatlieu.service.CurrentUser current;
   private final com.vatlieu.service.OperationsService operations;
 
   @GetMapping("/")
   public String home(Model model) {
-    if (current.owner()) model.addAttribute("money", operations.summary());
+    model.addAttribute("money", operations.summary());
     return "home";
   }
 

@@ -24,7 +24,7 @@ khoản trong **Cài đặt → Quản lý tài khoản**. Thành viên đăng n
 thoại đã được cấp cùng mật khẩu. Quản lý vẫn xử lý được các tài khoản đang chờ duyệt từ phiên bản
 trước.
 
-OWNER quản lý sản phẩm, nhập hàng, hao hụt, vốn/nợ và tài khoản. Nhập hàng chỉ cần ghi hàng, số
+Quản lý và nhân viên cùng làm nghiệp vụ kho. Riêng quản trị tài khoản dành cho OWNER. Nhập hàng chỉ cần ghi hàng, số
 lượng, giá, tiền đã trả rồi lưu. Tên người bán gõ trực tiếp, không bắt buộc (tối đa 150 ký tự),
 không phải tạo nhà cung cấp trước. Phiếu cũ giữ tên nhà cung cấp đã liên kết; phiếu mới không tạo
 bản ghi nhà cung cấp. Mỗi phiếu mới một mặt hàng: gõ tên hàng, chọn nhóm/đơn vị gốc, ghi số lượng và
@@ -34,8 +34,27 @@ tìm người bán, tên hàng, mã lô; lịch sử xuất có tìm người nh
 tiền đã chi nhập và tiền đã thu bán lên trước công cụ phụ. Cài đặt ở góc phải chứa Sáng/Tối, quản lý
 sản phẩm/tài khoản, đổi mật khẩu và đăng xuất. Chế độ giao diện nhớ trên trình duyệt. Nút Tất toán
 trên xuất bán chọn/bỏ chọn thu đủ; chỉ ghi tiền khi lưu phiếu, bỏ chọn vẫn giữ số tiền trả một phần
-đã nhập. STAFF xem tồn/giá bán, lập phiếu bán, chỉ xem phiếu do mình lập; không được lộ giá vốn.
-Kiểm tra quyền tại máy chủ, không chỉ ẩn nút ở giao diện.
+đã nhập.
+
+### Phân quyền của kho gia đình
+
+| Thao tác | Nhân viên (STAFF) | Quản lý (OWNER) |
+|---|---|---|
+| Nhập, bán, hao hụt, sản phẩm, danh mục, nhà cung cấp và lô | Có | Có |
+| Xem mọi phiếu, vốn, công nợ, thu/trả, Thùng rác và khôi phục phiếu đủ điều kiện | Có | Có |
+| Đổi mật khẩu của mình bằng mật khẩu hiện tại | Có | Có |
+| Xem danh sách và cấp tài khoản | Không | Có |
+| Duyệt, khóa/mở, xóa hoặc đặt lại mật khẩu tài khoản nhân viên | Không | Có |
+| Xóa hoặc đặt lại mật khẩu tài khoản quản lý qua trang quản trị | Không | Không |
+
+Sau khi xóa nhân viên, hệ thống ngừng đăng nhập, giữ liên kết với phiếu cũ và giữ tên đăng nhập
+để tránh gán nhầm lịch sử. Khi đặt lại mật khẩu, nhân viên phải đổi mật khẩu tạm ở lần đăng nhập tiếp theo.
+Máy chủ kiểm tra trạng thái, vai trò và phiên bản tài khoản trên từng yêu cầu có phiên đăng nhập.
+
+Khi thêm chức năng, xác định quyền trong `SecurityConfig`. Dùng `@WarehouseAccess` cho service
+nghiệp vụ kho. Đặt thao tác quản trị dưới `/admin/**`, kiểm tra người thực hiện trong `AccountService`
+và kiểm tra vai trò của tài khoản đích khi ghi dữ liệu. Thêm kiểm thử vào `AccessPostgresTest`
+cho cả hai vai trò, phiên bị thu hồi và POST thiếu CSRF. Chạy trên PostgreSQL kiểm thử riêng trước khi phát hành.
 
 ## 3. Bản đồ mã nguồn
 

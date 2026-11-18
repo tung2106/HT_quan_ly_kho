@@ -21,7 +21,6 @@ public class OperationsController {
   private final OperationsService service;
   private final SaleTrashService saleTrash;
   private final com.vatlieu.service.StockService stock;
-  private final com.vatlieu.service.CurrentUser current;
   private final com.vatlieu.service.UnitOptionsService units;
   private final ProductRepository products;
 
@@ -61,13 +60,12 @@ public class OperationsController {
 
   @GetMapping("/outbound/new")
   public String form(@RequestParam(defaultValue = "SALE") String kind, Model model) {
-    if (!"SALE".equals(kind)) current.requireOwner();
     OutboundForm form = new OutboundForm();
     form.setKind("WASTE".equals(kind) ? "WASTE" : "SALE");
     form.getItems().add(new PurchaseItemForm());
     model.addAttribute("form", form);
     model.addAttribute("unitOptions", units.findAll());
-    model.addAttribute("lots", stock.lots(current.owner()));
+    model.addAttribute("lots", stock.lots(false));
     model.addAttribute("products", products.findByActiveTrueOrderByNameAsc());
     return "outbound/form";
   }
@@ -86,7 +84,7 @@ public class OperationsController {
     } catch (IllegalArgumentException e) {
       model.addAttribute("error", e.getMessage());
       model.addAttribute("unitOptions", units.findAll());
-      model.addAttribute("lots", stock.lots(current.owner()));
+      model.addAttribute("lots", stock.lots(false));
       model.addAttribute("products", products.findByActiveTrueOrderByNameAsc());
       if (form.getItems().isEmpty()) form.getItems().add(new PurchaseItemForm());
       return "outbound/form";

@@ -4,16 +4,10 @@
   <body>
     <th:block th:replace="~{fragments :: shell(true)}"></th:block>
     <main class="container py-3">
-      <h1 class="h4 mb-3" th:text="${isOwner ? 'Hàng còn & vốn' : 'Hàng còn'}"></h1>
+      <h1 class="h4 mb-3">Hàng còn &amp; vốn</h1>
       <nav class="section-links mb-3" aria-label="Quản lý hàng hóa">
-        <a th:unless="${isOwner}" class="btn btn-outline-secondary" th:href="@{/products}">
-          Giá bán sản phẩm
-        </a>
-        <a
-          th:if="${isOwner}"
-          class="btn btn-outline-primary"
-          th:href="@{/stock/lots(group=${selectedGroup})}"
-        >
+        <a class="btn btn-outline-secondary" th:href="@{/products}">Sản phẩm</a>
+        <a class="btn btn-outline-primary" th:href="@{/stock/lots(group=${selectedGroup})}">
           Các lô còn tồn
         </a>
       </nav>
@@ -37,8 +31,8 @@
             <tr>
               <th scope="col">Sản phẩm</th>
               <th scope="col" class="text-end">Tồn</th>
-              <th scope="col" th:if="${isOwner}" class="text-end">Giá vốn</th>
-              <th scope="col" th:if="${isOwner}" class="text-end">Giá trị</th>
+              <th scope="col" class="text-end">Giá vốn</th>
+              <th scope="col" class="text-end">Giá trị</th>
             </tr>
           </thead>
           <tbody>
@@ -59,12 +53,10 @@
                 <small th:text="${r.baseUnit()}"></small>
               </td>
               <td
-                th:if="${isOwner}"
                 class="text-end"
                 th:text="${#numbers.formatDecimal(r.avgCost(),1,'POINT',0,'COMMA')} + ' VNĐ'"
               ></td>
               <td
-                th:if="${isOwner}"
                 class="text-end"
                 th:text="${#numbers.formatDecimal(r.value(),1,'POINT',0,'COMMA')} + ' VNĐ'"
               ></td>

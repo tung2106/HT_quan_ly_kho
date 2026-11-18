@@ -54,7 +54,7 @@
                 <svg th:replace="~{fragments :: icon('stock')}"></svg>
                 <span>Hàng còn</span>
               </a>
-              <a data-nav="purchases" th:if="${isOwner}" th:href="@{/purchases}">
+              <a data-nav="purchases" th:href="@{/purchases}">
                 <svg th:replace="~{fragments :: icon('in')}"></svg>
                 <span>Nhập hàng</span>
               </a>
@@ -62,7 +62,7 @@
                 <svg th:replace="~{fragments :: icon('out')}"></svg>
                 <span>Bán hàng</span>
               </a>
-              <a data-nav="capital" th:if="${isOwner}" th:href="@{/capital}">
+              <a data-nav="capital" th:href="@{/capital}">
                 <svg th:replace="~{fragments :: icon('money')}"></svg>
                 <span>Vốn / Nợ</span>
               </a>
@@ -109,14 +109,14 @@
           </div>
           <p class="visually-hidden" data-theme-status role="status"></p>
         </section>
-        <section th:if="${isOwner}" class="settings-section" aria-labelledby="settings-manage">
+        <section class="settings-section" aria-labelledby="settings-manage">
           <h3 id="settings-manage" class="h6">Quản lý</h3>
           <a class="settings-link" th:href="@{/products}">
             <svg th:replace="~{fragments :: icon('tag')}"></svg>
             <span>Sản phẩm</span>
             <svg th:replace="~{fragments :: icon('chevron')}"></svg>
           </a>
-          <a class="settings-link" th:href="@{/admin/users}">
+          <a th:if="${isOwner}" class="settings-link" th:href="@{/admin/users}">
             <svg th:replace="~{fragments :: icon('people')}"></svg>
             <span>Quản lý tài khoản</span>
             <svg th:replace="~{fragments :: icon('chevron')}"></svg>

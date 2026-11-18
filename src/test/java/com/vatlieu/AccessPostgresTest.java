@@ -198,7 +198,7 @@ class AccessPostgresTest {
       mvc.perform(get(path)).andExpect(redirectedUrlPattern("**/login"));
       mvc
         .perform(post(path).with(user("acl-owner").roles("OWNER")).with(csrf()))
-        .andExpect(status().isNotFound());
+        .andExpect(status().isForbidden());
     }
     mvc
       .perform(post("/admin/users").with(csrf()).param("username", "hacker"))
@@ -210,91 +210,188 @@ class AccessPostgresTest {
 
   @Test
   @WithMockUser(username = "acl-a", roles = "STAFF")
-  void staffCannotReadOtherOrdersOrCostsOrManagerRoutes() throws Exception {
+  void staffSharesBusinessScreensAndSalesHistory() throws Exception {
+    jdbc.update("INSERT INTO product(name,base_unit) VALUES ('Hàng có giá vốn','kg')");
     mvc
       .perform(get("/"))
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString("href=\"/outbound/new\"")))
-      .andExpect(content().string(not(containsString("href=\"/purchases/new\""))))
-      .andExpect(content().string(not(containsString("href=\"/capital\""))))
-      .andExpect(content().string(not(containsString("href=\"/admin/users\""))))
-      .andExpect(content().string(not(containsString("href=\"/products\""))))
-      .andExpect(content().string(containsString("id=\"app-settings\"")))
-      .andExpect(content().string(containsString("action=\"/logout\"")))
-      .andExpect(content().string(containsString("name=\"_csrf\"")));
-    long mine = order("acl-a", "MY-SALE", "SALE");
-    long other = order("acl-b", "PRIVATE-OTHER-SALE", "SALE");
-    long legacy = order(null, "LEGACY-PRIVATE", "SALE");
-    long waste = order("acl-a", "WASTE-PRIVATE", "WASTE");
-    long inTrash = order("acl-a", "ARCHIVED-MY-SALE", "SALE");
-    jdbc.update("UPDATE outbound_order SET trashed=true WHERE id=?", inTrash);
-    mvc.perform(get("/outbound").param("trash", "true")).andExpect(status().isForbidden());
-    mvc.perform(get("/outbound/" + inTrash)).andExpect(status().isForbidden());
-    mvc
-      .perform(post("/outbound/" + mine + "/trash").with(csrf()))
-      .andExpect(status().isForbidden());
-    mvc
-      .perform(post("/outbound/" + inTrash + "/restore").with(csrf()))
-      .andExpect(status().isForbidden());
+      .andExpect(content().string(containsString("href=\"/purchases/new\"")))
+      .andExpect(content().string(containsString("href=\"/capital\"")))
+      .andExpect(content().string(containsString("href=\"/products\"")))
+      .andExpect(content().string(not(containsString("href=\"/admin/users\""))));
+    long other = order("acl-b", "Phiếu chung", "SALE");
+    long legacy = order(null, "Phiếu cũ", "SALE");
+    long waste = order("acl-owner", "Hao hụt chung", "WASTE");
+    long trashed = order("acl-b", "Phiếu đã xóa", "SALE");
+    jdbc.update("UPDATE outbound_order SET trashed=true WHERE id=?", trashed);
     mvc
       .perform(get("/outbound"))
-      .andExpect(status().isOk())
-      .andExpect(content().string(not(containsString("/outbound/" + inTrash + "\""))))
-      .andExpect(content().string(not(containsString("Xóa phiếu"))))
-      .andExpect(content().string(not(containsString("PRIVATE-OTHER-SALE"))))
-      .andExpect(content().string(not(containsString("LEGACY-PRIVATE"))));
+      .andExpect(content().string(containsString("/outbound/" + other + "\"")))
+      .andExpect(content().string(not(containsString("/outbound/" + trashed + "\""))));
     mvc
-      .perform(get("/outbound/" + mine))
-      .andExpect(status().isOk())
-      .andExpect(content().string(containsString("MY-SALE")))
-      .andExpect(content().string(not(containsString("Giá vốn"))))
-      .andExpect(content().string(not(containsString("Tổng giá vốn"))));
-    for (long denied : new long[] { other, legacy, waste })
-      mvc.perform(get("/outbound/" + denied)).andExpect(status().isForbidden());
+      .perform(get("/outbound").param("trash", "true"))
+      .andExpect(content().string(containsString("/outbound/" + trashed + "\"")));
+    for (long receipt : new long[] { other, legacy, waste, trashed })
+      mvc
+        .perform(get("/outbound/" + receipt))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("Tổng giá vốn")));
     for (String path : new String[] {
       "/capital",
+      "/capital?section=debts",
+      "/stock/lots",
       "/purchases",
-      "/purchases?trash=true",
       "/purchases/new",
+      "/products/new",
       "/categories",
       "/suppliers",
-      "/products/new",
-      "/admin/users",
       "/outbound/new?kind=WASTE",
     })
-      mvc.perform(get(path)).andExpect(status().isForbidden());
+      mvc.perform(get(path)).andExpect(status().isOk());
+    mvc.perform(get("/stock")).andExpect(content().string(containsString("Giá vốn")));
     mvc
-      .perform(post("/outbound").with(csrf()).param("kind", "WASTE").param("note", "Giả mạo"))
+      .perform(post("/categories").with(csrf()).param("name", "Danh mục chung"))
+      .andExpect(flash().attributeExists("msg"));
+  }
+
+  @Test
+  @WithMockUser(username = "acl-a", roles = "STAFF")
+  void staffCannotAdministerAccountsEvenWithValidCsrf() throws Exception {
+    long other = id("acl-b");
+    assertThatThrownBy(() -> accounts.deleteStaff(other)).isInstanceOf(
+      org.springframework.security.access.AccessDeniedException.class
+    );
+    assertThatThrownBy(() -> accounts.resetPassword(other, password)).isInstanceOf(
+      org.springframework.security.access.AccessDeniedException.class
+    );
+    var before = jdbc.queryForMap("SELECT * FROM app_user WHERE id=?", other);
+    mvc.perform(get("/admin/users")).andExpect(status().isForbidden());
+    mvc
+      .perform(
+        post("/admin/users")
+          .with(csrf())
+          .param("username", "acl-extra")
+          .param("role", "OWNER")
+          .param("fullName", "Mới")
+          .param("password", password)
+      )
       .andExpect(status().isForbidden());
-    mvc.perform(get("/suppliers?deleted=true")).andExpect(status().isForbidden());
-    for (String path : new String[] {
-      "/products",
-      "/products/1/delete",
-      "/purchases/1/trash",
-      "/purchases/1/restore",
-      "/categories",
-      "/categories/1/edit",
-      "/categories/1/delete",
-      "/suppliers/1/delete",
-      "/suppliers/1/restore",
-      "/suppliers/1/edit",
-      "/capital/pay",
-      "/admin/users",
-    })
-      mvc.perform(post(path).with(csrf())).andExpect(status().isForbidden());
+    for (String op : new String[] { "password", "active", "delete" })
+      mvc
+        .perform(
+          post("/admin/users/" + other + "/" + op)
+            .with(csrf())
+            .param("password", password)
+            .param("active", "false")
+        )
+        .andExpect(status().isForbidden());
+    assertThat(jdbc.queryForMap("SELECT * FROM app_user WHERE id=?", other)).isEqualTo(before);
+    assertThat(
+      jdbc.queryForObject("SELECT COUNT(*) FROM app_user WHERE username='acl-extra'", Integer.class)
+    ).isZero();
+    mvc.perform(get("/account/password")).andExpect(status().isOk());
+  }
+
+  private MockHttpSession loginAs(String name, String secret) throws Exception {
+    return (MockHttpSession) mvc
+      .perform(post("/login").with(csrf()).param("username", name).param("password", secret))
+      .andExpect(redirectedUrl("/"))
+      .andReturn()
+      .getRequest()
+      .getSession(false);
+  }
+
+  @Test
+  void losingManagerRoleExpiresExistingManagerSession() throws Exception {
+    MockHttpSession session = loginAs("acl-owner", password);
+    jdbc.update("UPDATE app_user SET role='STAFF' WHERE username='acl-owner'");
+    mvc.perform(get("/admin/users").session(session)).andExpect(redirectedUrl("/login?expired"));
     mvc
-      .perform(get("/stock"))
-      .andExpect(status().isOk())
-      .andExpect(content().string(not(containsString("Giá vốn"))));
+      .perform(get("/admin/users").session(loginAs("acl-owner", password)))
+      .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void managerResetAndDeletionRevokeSessionsAndPreserveCreator() throws Exception {
+    long staff = id("acl-a");
+    long receipt = order("acl-a", "Phiếu lưu", "SALE");
+    String prefix = "/admin/users/" + staff;
+    MockHttpSession staffSession = loginAs("acl-a", password);
+    MockHttpSession manager = loginAs("acl-owner", password);
+    String temporary = "New-test-only-456!";
     mvc
-      .perform(get("/stock").param("group", "MATERIAL"))
-      .andExpect(status().isOk())
-      .andExpect(content().string(not(containsString("Giá vốn"))))
-      .andExpect(content().string(not(containsString("/stock/lots"))));
+      .perform(
+        post(prefix + "/password")
+          .session(manager)
+          .with(csrf())
+          .param("password", temporary)
+      )
+      .andExpect(flash().attributeExists("msg"));
+    mvc.perform(get("/stock").session(staffSession)).andExpect(redirectedUrl("/login?expired"));
+    staffSession = loginAs("acl-a", temporary);
+    mvc.perform(get("/stock").session(staffSession)).andExpect(redirectedUrl("/account/password"));
+    mvc.perform(post(prefix + "/delete").session(manager)).andExpect(status().isForbidden());
     mvc
-      .perform(get("/products"))
-      .andExpect(status().isOk())
-      .andExpect(content().string(not(containsString("giá vốn"))));
+      .perform(
+        post(prefix + "/delete")
+          .session(manager)
+          .with(csrf())
+      )
+      .andExpect(flash().attributeExists("msg"));
+    mvc
+      .perform(get("/account/password").session(staffSession))
+      .andExpect(redirectedUrl("/login?expired"));
+    mvc
+      .perform(post("/login").with(csrf()).param("username", "acl-a").param("password", temporary))
+      .andExpect(redirectedUrl("/login?error"));
+    mvc
+      .perform(get("/admin/users").session(manager))
+      .andExpect(content().string(not(containsString("(acl-a)"))));
+    mvc
+      .perform(
+        post(prefix + "/active")
+          .session(manager)
+          .with(csrf())
+          .param("active", "true")
+      )
+      .andExpect(flash().attributeExists("error"));
+    mvc
+      .perform(
+        post(prefix + "/password")
+          .session(manager)
+          .with(csrf())
+          .param("password", temporary)
+      )
+      .andExpect(flash().attributeExists("error"));
+    assertThat(
+      jdbc.queryForObject("SELECT created_by FROM outbound_order WHERE id=?", Long.class, receipt)
+    ).isEqualTo(staff);
+  }
+
+  @Test
+  @WithMockUser(username = "acl-owner", roles = "OWNER")
+  void accountAdministrationCannotTargetAnyManager() throws Exception {
+    accounts.create("acl-owner2", "Quản lý khác", "OWNER", password);
+    for (String name : new String[] { "acl-owner", "acl-owner2" }) {
+      String prefix = "/admin/users/" + id(name);
+      for (String op : new String[] { "delete", "active", "password" }) {
+        mvc
+          .perform(
+            post(prefix + "/" + op)
+              .with(csrf())
+              .param("active", "false")
+              .param("password", password)
+          )
+          .andExpect(flash().attributeExists("error"));
+      }
+      assertThat(
+        jdbc.queryForObject(
+          "SELECT active AND deleted_at IS NULL AND auth_version=0 FROM app_user WHERE username=?",
+          Boolean.class,
+          name
+        )
+      ).isTrue();
+    }
   }
 
   @Test

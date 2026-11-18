@@ -24,7 +24,6 @@
           th:text="|Đơn giá: ${#numbers.formatDecimal(i.unit_price,1,'POINT',0,'COMMA')} VNĐ|"
         ></span>
         <span
-          th:if="${isOwner}"
           th:text="|Giá vốn xuất: ${#numbers.formatDecimal(i.cost_amount,1,'POINT',0,'COMMA')} VNĐ|"
         ></span>
       </div>
@@ -45,16 +44,11 @@
           th:unless="${o.trashed}"
           th:text="|Còn nợ: ${#numbers.formatDecimal(o.total_amount.subtract(o.paid_amount),1,'POINT',0,'COMMA')} VNĐ|"
         ></p>
-        <a
-          th:if="${isOwner and !o.trashed}"
-          class="btn btn-primary w-100 mb-2"
-          th:href="@{/capital}"
-        >
+        <a th:if="${!o.trashed}" class="btn btn-primary w-100 mb-2" th:href="@{/capital}">
           Ghi thu tiền / xem công nợ
         </a>
       </div>
       <p
-        th:if="${isOwner}"
         th:text="|Tổng giá vốn: ${#numbers.formatDecimal(o.cost_amount,1,'POINT',0,'COMMA')} VNĐ|"
       ></p>
       <th:block th:replace="~{outbound/list :: trashActions(${o},${o.trashed},'')}"></th:block>

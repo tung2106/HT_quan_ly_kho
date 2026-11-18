@@ -104,4 +104,15 @@ public class AccountController {
     }
     return "redirect:/admin/users";
   }
+
+  @PostMapping("/admin/users/{id}/delete")
+  public String deleteStaff(@PathVariable long id, RedirectAttributes flash) {
+    try {
+      accounts.deleteStaff(id);
+      flash.addFlashAttribute("msg", "Đã xóa tài khoản. Các phiếu đã lập vẫn được lưu.");
+    } catch (IllegalArgumentException e) {
+      flash.addFlashAttribute("error", e.getMessage());
+    }
+    return "redirect:/admin/users";
+  }
 }

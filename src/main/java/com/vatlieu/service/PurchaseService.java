@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @RequiredArgsConstructor
+@WarehouseAccess
 public class PurchaseService {
 
   private final ProductRepository productRepo;
@@ -38,7 +39,6 @@ public class PurchaseService {
   private final ProductService products;
 
   @Transactional(readOnly = true)
-  @org.springframework.security.access.prepost.PreAuthorize("hasRole('OWNER')")
   public List<PurchaseOrder> history(String keyword, boolean trashed) {
     String query = SearchText.normalize(keyword);
     return orderRepo
@@ -89,7 +89,6 @@ public class PurchaseService {
   ) {}
 
   @Transactional
-  @org.springframework.security.access.prepost.PreAuthorize("hasRole('OWNER')")
   public PurchaseOrder create(PurchaseForm f) {
     String sellerName = f.getSellerName() == null ? "" : f.getSellerName().strip();
     if (sellerName.length() > 150) throw new IllegalArgumentException(

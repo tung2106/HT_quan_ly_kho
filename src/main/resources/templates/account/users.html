@@ -42,7 +42,7 @@
         <span
           th:text="${u.pending_approval ? 'Đã xác thực điện thoại · Chờ duyệt' : (u.active ? 'Đang hoạt động' : 'Đã khóa')}"
         ></span>
-        <div th:if="${u.username != loginName}">
+        <div th:if="${u.role == 'STAFF'}">
           <form
             novalidate
             class="mt-2"
@@ -76,6 +76,25 @@
               <button class="btn btn-outline-primary">Đặt lại mật khẩu</button>
             </form>
           </details>
+          <form
+            novalidate
+            method="post"
+            class="mt-2"
+            th:action="@{/admin/users/{id}/delete(id=${u.id})}"
+            th:attr="data-confirm-title=|Xóa tài khoản ${u.username}?|"
+            data-confirm="Người dùng sẽ mất quyền đăng nhập. Các phiếu đã lập vẫn được lưu."
+            data-confirm-action="Xóa tài khoản"
+          >
+            <button
+              type="submit"
+              class="btn btn-outline-danger"
+              disabled
+              data-requires-confirmation
+            >
+              Xóa tài khoản
+            </button>
+            <noscript>Bật JavaScript để xác nhận xóa tài khoản.</noscript>
+          </form>
         </div>
       </div>
     </main>

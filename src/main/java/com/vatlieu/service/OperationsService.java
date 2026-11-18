@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
+@WarehouseAccess
 public class OperationsService {
 
   private final JdbcTemplate jdbc;
@@ -26,17 +26,13 @@ public class OperationsService {
   @Transactional
   public long create(OutboundForm form) {
     long actor = current.id();
-    if (!"SALE".equals(form.getKind())) current.requireOwner();
     lockRequest(form.getRequestKey());
     List<Long> existing = jdbc.queryForList(
       "SELECT id FROM outbound_order WHERE request_key=?",
       Long.class,
       form.getRequestKey()
     );
-    if (!existing.isEmpty()) {
-      detail(existing.get(0));
-      return existing.get(0);
-    }
+    if (!existing.isEmpty()) return existing.get(0);
     boolean sale = "SALE".equals(form.getKind());
     if (!sale && !"WASTE".equals(form.getKind())) throw new IllegalArgumentException(
       "Loại phiếu không hợp lệ"
@@ -238,7 +234,6 @@ public class OperationsService {
     String note,
     boolean settleAll
   ) {
-    current.requireOwner();
     lockRequest(key);
     if (
       !jdbc.queryForList("SELECT id FROM cash_payment WHERE request_key=?", key).isEmpty()
@@ -285,11 +280,6 @@ public class OperationsService {
   }
 
   private List<Map<String, Object>> visibleOrders(boolean trash) {
-    if (trash) current.requireOwner();
-    if (!trash && !current.owner()) return jdbc.queryForList(
-      "SELECT id,kind,created_at,customer,note,total_amount,paid_amount FROM outbound_order WHERE kind='SALE' AND NOT trashed AND created_by=? ORDER BY id DESC",
-      current.id()
-    );
     return jdbc.queryForList(
       "SELECT * FROM outbound_order WHERE trashed=? ORDER BY id DESC",
       trash
@@ -302,7 +292,6 @@ public class OperationsService {
 
   public List<Map<String, Object>> orders(String keyword, boolean trash) {
     String query = SearchText.normalize(keyword);
-    // Lọc sau truy vấn theo quyền, nhân viên không thấy phiếu của người khác.
     return visibleOrders(trash)
       .stream()
       .filter(
@@ -321,15 +310,6 @@ public class OperationsService {
     );
     if (rows.isEmpty()) throw new IllegalArgumentException("Không tìm thấy phiếu");
     Map<String, Object> order = rows.get(0);
-    boolean owner = current.owner();
-    if (
-      !owner &&
-      (Boolean.TRUE.equals(order.get("trashed")) ||
-        !"SALE".equals(order.get("kind")) ||
-        !Objects.equals(order.get("created_by"), current.id()))
-    ) throw new org.springframework.security.access.AccessDeniedException(
-      "Bạn chỉ được xem phiếu bán đang sử dụng do mình tạo"
-    );
     order.put(
       "items",
       jdbc.queryForList(
@@ -343,15 +323,10 @@ public class OperationsService {
       order.get("kind")
     );
     order.put("usedLots", usedLots);
-    if (!owner) {
-      order.remove("cost_amount");
-      ((List<Map<String, Object>>) order.get("items")).forEach(item -> item.remove("cost_amount"));
-    }
     return order;
   }
 
   public List<Map<String, Object>> debts() {
-    current.requireOwner();
     return jdbc.queryForList(
       """
       SELECT 'sale' AS type,id,COALESCE(NULLIF(TRIM(customer),''),'Khách lẻ') AS partner,total_amount,paid_amount,total_amount-paid_amount AS remaining
@@ -371,7 +346,6 @@ public class OperationsService {
     String to,
     String partner
   ) {
-    current.requireOwner();
     java.time.LocalDate start, end;
     try {
       start = from.isBlank() ? null : java.time.LocalDate.parse(from);
@@ -417,7 +391,6 @@ public class OperationsService {
   }
 
   public Map<String, Object> summary() {
-    current.requireOwner();
     return jdbc.queryForMap(
       """
       SELECT

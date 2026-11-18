@@ -10,7 +10,7 @@ Mỗi skill dưới đây có một tệp `SKILL.md` gồm mô tả khi nào dù
 | “Sửa ô nhập tiền để dễ bấm trên điện thoại.”                 | [Frontend · Thymeleaf và biểu mẫu](skills/frontend-thymeleaf/SKILL.md)      |
 | “Kiểm tra cách tính giá vốn khi bán từ hai lô.”              | [Backend · Nghiệp vụ kho và tiền](skills/backend-nghiep-vu-kho/SKILL.md)    |
 | “Thêm cột ghi ngày khôi phục phiếu, giữ được dữ liệu cũ.”    | [Database · PostgreSQL và Flyway](skills/database-postgres-flyway/SKILL.md) |
-| “Chặn nhân viên mở phiếu bán của người khác bằng đường dẫn.” | [API · HTTP và phân quyền](skills/api-spring-mvc/SKILL.md)                  |
+| “Chặn nhân viên đặt lại mật khẩu của người khác.” | [API · HTTP và phân quyền](skills/api-spring-mvc/SKILL.md)                  |
 
 Một việc có thể dùng nhiều skill. Chẳng hạn, thêm bộ lọc ngày vào lịch sử bán liên quan đến form ở
 giao diện và tham số GET ở controller.

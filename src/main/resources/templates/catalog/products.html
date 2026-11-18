@@ -6,7 +6,7 @@
     <main class="container py-3">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="h4 mb-0">Sản phẩm</h1>
-        <a th:if="${isOwner}" class="btn btn-primary" th:href="@{/products/new}">+ Thêm</a>
+        <a class="btn btn-primary" th:href="@{/products/new}">+ Thêm</a>
       </div>
       <div th:replace="~{fragments :: alerts}"></div>
       <section th:each="group : ${ {'MATERIAL','AGRICULTURE'} }">
@@ -16,7 +16,7 @@
         ></h2>
         <div class="list-group">
           <div
-            th:if="${isOwner and p.productGroup == group}"
+            th:if="${p.productGroup == group}"
             class="list-group-item"
             th:each="p : ${products}"
             th:classappend="${!p.active} ? 'text-muted'"
@@ -50,16 +50,6 @@
                 <button class="btn btn-outline-danger" type="submit">Xóa</button>
               </form>
             </div>
-          </div>
-          <div
-            th:if="${!isOwner and p.active and p.productGroup == group}"
-            class="list-group-item"
-            th:each="p : ${products}"
-          >
-            <strong th:text="${p.name}"></strong>
-            <span
-              th:text="${#numbers.formatDecimal(p.retailPrice,1,'POINT',0,'COMMA')} + ' VNĐ / ' + ${p.baseUnit}"
-            ></span>
           </div>
         </div>
       </section>

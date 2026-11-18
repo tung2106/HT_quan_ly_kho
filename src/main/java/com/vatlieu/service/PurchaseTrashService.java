@@ -3,12 +3,12 @@ package com.vatlieu.service;
 import com.vatlieu.repository.BatchRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@WarehouseAccess
 public class PurchaseTrashService {
 
   private final JdbcTemplate jdbc;
@@ -16,7 +16,6 @@ public class PurchaseTrashService {
   private final CurrentUser current;
 
   @Transactional
-  @PreAuthorize("hasRole('OWNER')")
   public void setTrashed(long id, boolean trash) {
     // Cùng khóa phiếu với thanh toán, sau đó khóa sản phẩm theo thứ tự của luồng xuất.
     var states = jdbc.queryForList(

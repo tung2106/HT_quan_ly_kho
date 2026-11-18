@@ -81,6 +81,9 @@ class OperationsPostgresTest {
         .getResponse()
         .getContentAsString();
       String productRow = html.substring(html.indexOf(name));
+      org.springframework.security.core.context.SecurityContextHolder.setContext(
+        org.springframework.security.test.context.TestSecurityContextHolder.getContext()
+      );
       productRow = productRow.substring(0, productRow.indexOf("</tr>"));
       assertThat(productRow).contains("Hết hàng").doesNotContain("Sắp hết");
     }
@@ -239,7 +242,7 @@ class OperationsPostgresTest {
           ).roles("STAFF")
         )
       )
-      .andExpect(status().isForbidden());
+      .andExpect(status().isOk());
   }
 
   @Test

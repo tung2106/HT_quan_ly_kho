@@ -30,7 +30,7 @@ public class CurrentUser {
     return ids.get(0);
   }
 
-  public boolean owner() {
+  private boolean owner() {
     return Boolean.TRUE.equals(
       jdbc.queryForObject(
         "SELECT EXISTS(SELECT 1 FROM app_user WHERE username=? AND active AND role='OWNER')",

@@ -69,7 +69,7 @@
           </div>
           <form
             novalidate
-            th:if="${isOwner and !deleted}"
+            th:if="${!deleted}"
             method="post"
             th:action="@{/suppliers/{id}/delete(id=${s.id})}"
             data-confirm="Ngừng chọn nhà cung cấp khi nhập mới. Phiếu cũ và công nợ vẫn được giữ; có thể khôi phục từ danh sách đã xóa."
@@ -80,13 +80,13 @@
           </form>
           <form
             novalidate
-            th:if="${isOwner and deleted}"
+            th:if="${deleted}"
             method="post"
             th:action="@{/suppliers/{id}/restore(id=${s.id})}"
           >
             <button class="btn btn-success" type="submit">Khôi phục</button>
           </form>
-          <details th:if="${isOwner}" class="w-100" th:open="${editId == s.id}">
+          <details class="w-100" th:open="${editId == s.id}">
             <summary class="btn btn-outline-primary">Sửa tên / số điện thoại</summary>
             <form
               novalidate
