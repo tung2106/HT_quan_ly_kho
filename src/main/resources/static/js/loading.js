@@ -1,5 +1,6 @@
 (() => {
   const script = document.querySelector('script[data-cat-src]');
+  const revealDelay = 1500;
   const overlay = document.createElement('div');
   overlay.className = 'sky-loading';
   overlay.hidden = true;
@@ -12,8 +13,8 @@
     <div class="sky-loading-dots" aria-hidden="true"><span></span><span></span><span></span></div>
     <button type="button" class="btn btn-outline-primary" hidden>Ẩn màn hình chờ</button>
   </div>`;
-  overlay.querySelector('img').src = script.dataset.catSrc;
   document.body.appendChild(overlay);
+  const cat = overlay.querySelector('img');
   const message = overlay.querySelector('.sky-loading-message');
   const dismiss = overlay.querySelector('button');
   let timer;
@@ -33,8 +34,9 @@
     dismiss.hidden = true;
     clearTimeout(reveal);
     reveal = setTimeout(() => {
+      if (!cat.hasAttribute('src')) cat.src = script.dataset.catSrc;
       overlay.hidden = false;
-    }, 250);
+    }, revealDelay);
     clearTimeout(timer);
     timer = setTimeout(() => {
       message.textContent =
@@ -43,8 +45,10 @@
     }, 12000);
   };
   dismiss.addEventListener('click', hide);
-  window.addEventListener('pageshow', reset);
-  window.addEventListener('load', hide, { once: true });
+  window.addEventListener('pagehide', hide);
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) reset();
+  });
   document.addEventListener('click', (event) => {
     const link = event.target.closest('a[href]');
     if (
@@ -87,5 +91,4 @@
           (link.dataset.nav !== 'home' && location.pathname.startsWith(path + '/'));
     if (active) link.setAttribute('aria-current', 'page');
   });
-  if (document.readyState !== 'complete') show('Đang tải trang, bạn chờ một chút nhé.');
 })();

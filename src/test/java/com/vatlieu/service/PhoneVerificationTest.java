@@ -51,12 +51,20 @@ class PhoneVerificationTest {
         );
     }
     server.expect(requestTo(base + "accounts:signInWithPhoneNumber")).andRespond(withBadRequest());
+    server
+      .expect(requestTo(base + "accounts:sendVerificationCode"))
+      .andRespond(withBadRequest().body("{\"error\":{\"message\":\"BILLING_NOT_ENABLED\"}}"));
     server.expect(requestTo(base + "accounts:sendVerificationCode")).andRespond(withServerError());
     assertThat(sms.captchaSiteKey()).isEqualTo("public-site-key");
     assertThat(sms.send("0981234567", "captcha")).isEqualTo("session-from-firebase");
     assertThat(sms.approved("session-from-firebase", "0981234567", "123456")).isTrue();
     assertThat(sms.approved("session-from-firebase", "0981234567", "123456")).isFalse();
     assertThat(sms.approved("session-from-firebase", "0981234567", "000000")).isFalse();
+    assertThatThrownBy(() -> sms.send("0981234567", "captcha"))
+      .isInstanceOf(IllegalArgumentException.class)
+      .hasMessageContaining("Chưa gửi được mã SMS")
+      .hasMessageNotContaining("Firebase")
+      .hasMessageNotContaining("BILLING_NOT_ENABLED");
     assertThatThrownBy(() -> sms.send("0981234567", "captcha")).isInstanceOf(
       IllegalArgumentException.class
     );

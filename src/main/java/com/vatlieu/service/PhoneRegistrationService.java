@@ -1,5 +1,6 @@
 package com.vatlieu.service;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -11,6 +12,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 public class PhoneRegistrationService {
 
+  public static final int CONSENT_VERSION = 1;
+
   private final JdbcTemplate jdbc;
   private final TransactionTemplate transactions;
   private final PasswordEncoder passwords;
@@ -18,7 +21,20 @@ public class PhoneRegistrationService {
 
   public record Challenge(UUID id, String phone) {}
 
-  public Challenge start(String input, String captcha) {
+  private record SmsAttempt(String sessionInfo, int consentVersion, OffsetDateTime consentedAt) {}
+
+  public Challenge start(
+    String input,
+    String captcha,
+    int consentVersion,
+    boolean acceptedTerms,
+    boolean acceptedPhoneProcessing
+  ) {
+    if (!acceptedTerms || !acceptedPhoneProcessing || consentVersion != CONSENT_VERSION) {
+      throw new IllegalArgumentException(
+        "Hãy đọc và đánh dấu cả hai ô đồng ý trước khi yêu cầu mã SMS."
+      );
+    }
     String phone = MobileNumber.require(input);
     if (!sms.configured()) throw new IllegalArgumentException(
       "Cửa hàng chưa bật gửi mã SMS. Hãy liên hệ quản lý."
@@ -65,9 +81,10 @@ public class PhoneRegistrationService {
           )
         ) return false;
         jdbc.update(
-          "INSERT INTO registration_sms(id,phone,requested_at) VALUES (?,?,statement_timestamp())",
+          "INSERT INTO registration_sms(id,phone,requested_at,consent_version) VALUES (?,?,statement_timestamp(),?)",
           challenge.id(),
-          phone
+          phone,
+          consentVersion
         );
         return true;
       })
@@ -92,33 +109,44 @@ public class PhoneRegistrationService {
     ) throw new IllegalArgumentException("Họ tên cần từ 1 đến 100 ký tự.");
     AccountService.validatePassword(password);
     if (code == null || !code.matches("[0-9]{6}")) throw invalidCode();
-    var ids = jdbc.queryForList(
+    var attempts = jdbc.query(
       """
       UPDATE registration_sms SET attempts=attempts+1 WHERE id=? AND phone=? AND attempts < 5
-        AND requested_at > statement_timestamp() - interval '10 minutes' AND firebase_session_info IS NOT NULL
-      RETURNING firebase_session_info
+        AND requested_at > statement_timestamp() - interval '10 minutes'
+        AND firebase_session_info IS NOT NULL AND consent_version IS NOT NULL
+      RETURNING firebase_session_info, consent_version, requested_at
       """,
-      String.class,
+      (row, index) ->
+        new SmsAttempt(
+          row.getString("firebase_session_info"),
+          row.getInt("consent_version"),
+          row.getObject("requested_at", OffsetDateTime.class)
+        ),
       challenge.id(),
       challenge.phone()
     );
-    if (ids.isEmpty() || !sms.approved(ids.get(0), challenge.phone(), code)) throw invalidCode();
+    if (attempts.isEmpty()) throw invalidCode();
+    SmsAttempt attempt = attempts.get(0);
+    if (!sms.approved(attempt.sessionInfo(), challenge.phone(), code)) throw invalidCode();
     String hash = passwords.encode(password);
     transactions.executeWithoutResult(status -> {
       int consumed = jdbc.update(
         "UPDATE registration_sms SET firebase_session_info=NULL WHERE id=? AND firebase_session_info=?",
         challenge.id(),
-        ids.get(0)
+        attempt.sessionInfo()
       );
       if (consumed == 0) throw invalidCode();
       jdbc.update(
         """
-        INSERT INTO app_user(username,full_name,password,role,active,pending_approval,must_change_password)
-        VALUES (?,?,?,'STAFF',false,true,false) ON CONFLICT (username) DO NOTHING
+        INSERT INTO app_user(username,full_name,password,role,active,pending_approval,must_change_password,
+          registration_consent_version,registration_consented_at)
+        VALUES (?,?,?,'STAFF',false,true,false,?,?) ON CONFLICT (username) DO NOTHING
         """,
         challenge.phone(),
         fullName.trim(),
-        hash
+        hash,
+        attempt.consentVersion(),
+        attempt.consentedAt()
       );
     });
   }

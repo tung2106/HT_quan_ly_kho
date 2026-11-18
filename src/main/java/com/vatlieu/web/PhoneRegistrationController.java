@@ -25,6 +25,7 @@ public class PhoneRegistrationController {
 
   @GetMapping
   public String form(Model model) {
+    model.addAttribute("consentVersion", PhoneRegistrationService.CONSENT_VERSION);
     if (verification.configured()) {
       try {
         model.addAttribute("captchaSiteKey", verification.captchaSiteKey());
@@ -39,15 +40,25 @@ public class PhoneRegistrationController {
   public String send(
     @RequestParam String phone,
     @RequestParam(name = "g-recaptcha-response", defaultValue = "") String captcha,
+    @RequestParam(defaultValue = "0") int consentVersion,
+    @RequestParam(defaultValue = "false") boolean acceptedTerms,
+    @RequestParam(defaultValue = "false") boolean acceptedPhoneProcessing,
     HttpSession session,
     Model model
   ) {
     try {
-      session.setAttribute(CHALLENGE, registrations.start(phone, captcha));
+      session.setAttribute(
+        CHALLENGE,
+        registrations.start(phone, captcha, consentVersion, acceptedTerms, acceptedPhoneProcessing)
+      );
       return "redirect:/register/verify";
     } catch (IllegalArgumentException e) {
       model.addAttribute("phone", phone);
       model.addAttribute("error", e.getMessage());
+      if (consentVersion == PhoneRegistrationService.CONSENT_VERSION) {
+        model.addAttribute("acceptedTerms", acceptedTerms);
+        model.addAttribute("acceptedPhoneProcessing", acceptedPhoneProcessing);
+      }
       return form(model);
     }
   }

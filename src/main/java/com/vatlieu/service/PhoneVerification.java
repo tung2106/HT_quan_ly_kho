@@ -3,7 +3,9 @@ package com.vatlieu.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -12,7 +14,24 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.*;
 
 @Component
+@Slf4j
 public class PhoneVerification {
+
+  private static final List<String> SMS_ERROR_CODES = List.of(
+    "BILLING_NOT_ENABLED",
+    "CAPTCHA_CHECK_FAILED",
+    "INVALID_APP_CREDENTIAL",
+    "OPERATION_NOT_ALLOWED",
+    "SMS_REGION_RESTRICTED",
+    "SMS_REGION_BLOCKED",
+    "QUOTA_EXCEEDED",
+    "TOO_MANY_ATTEMPTS_TRY_LATER",
+    "INVALID_PHONE_NUMBER",
+    "API_KEY_SERVICE_BLOCKED",
+    "API_KEY_IP_ADDRESS_BLOCKED",
+    "API_KEY_HTTP_REFERRER_BLOCKED",
+    "API_KEY_INVALID"
+  );
 
   private final RestClient client;
   private final boolean configured;
@@ -65,11 +84,22 @@ public class PhoneVerification {
         Map.of("phoneNumber", "+84" + phone.substring(1), "recaptchaToken", captcha)
       );
       return requiredText(result, "sessionInfo");
-    } catch (HttpClientErrorException.BadRequest e) {
-      throw new IllegalArgumentException(
-        "Firebase chưa gửi được mã. Hãy kiểm tra số điện thoại và xác nhận lại reCAPTCHA."
-      );
+    } catch (RestClientResponseException e) {
+      // Chỉ ghi lỗi đã biết, không ghi số điện thoại, mã hoặc nội dung phản hồi.
+      String response = e.getResponseBodyAsString();
+      String reason = SMS_ERROR_CODES.stream()
+        .filter(response::contains)
+        .findFirst()
+        .orElse("UNKNOWN");
+      log.warn("Gửi mã SMS thất bại. HTTP {}, mã lỗi {}", e.getStatusCode().value(), reason);
+      if (e instanceof HttpClientErrorException.BadRequest) {
+        throw new IllegalArgumentException(
+          "Chưa gửi được mã SMS. Hãy kiểm tra số điện thoại và xác nhận lại reCAPTCHA."
+        );
+      }
+      throw unavailable();
     } catch (RestClientException e) {
+      log.warn("Không nhận được phản hồi khi gửi mã SMS.");
       throw unavailable();
     }
   }

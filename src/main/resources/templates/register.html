@@ -14,7 +14,8 @@
           <p th:unless="${smsEnabled}" class="alert alert-info" role="status">
             Cửa hàng chưa bật gửi mã SMS. Hãy liên hệ quản lý để được cấp tài khoản.
           </p>
-          <form th:if="${captchaSiteKey != null}" method="post" th:action="@{/register}">
+          <form novalidate th:if="${captchaSiteKey != null}" method="post" th:action="@{/register}">
+            <input type="hidden" name="consentVersion" th:value="${consentVersion}" />
             <label class="form-label" for="phone">Số điện thoại Việt Nam</label>
             <input
               class="form-control mb-3"
@@ -26,10 +27,64 @@
               th:value="${phone}"
               required
             />
-            <p class="small">
-              Khi yêu cầu mã, bạn đồng ý gửi số điện thoại tới Google để xác thực và phòng chống lạm
-              dụng.
-            </p>
+            <fieldset class="mb-3">
+              <legend class="fs-6 fw-semibold mb-2">Điều khoản và quyền riêng tư</legend>
+              <details class="mb-2">
+                <summary>Điều khoản sử dụng</summary>
+                <p class="small mt-2 mb-0">
+                  Kho gia đình dành cho thành viên được quản lý duyệt. Dùng tài khoản của bạn để làm
+                  việc trong kho và giữ riêng mật khẩu, mã xác thực. Báo quản lý nếu nghi ngờ có
+                  người khác sử dụng tài khoản của bạn.
+                </p>
+              </details>
+              <details class="mb-3">
+                <summary>Thông tin về dữ liệu đăng ký</summary>
+                <div class="small mt-2">
+                  <p>
+                    Kho gia đình lưu họ tên, số điện thoại và bản băm mật khẩu để tạo tài khoản,
+                    đăng nhập và quản lý quyền truy cập. Hệ thống lưu thời điểm và phiên bản nội
+                    dung bạn đã chấp thuận.
+                  </p>
+                  <p class="mb-0">
+                    Liên hệ quản lý kho nếu bạn muốn hỏi về dữ liệu của mình hoặc đề nghị ngừng sử
+                    dụng tài khoản.
+                  </p>
+                </div>
+              </details>
+              <div class="form-check mb-2">
+                <input
+                  class="form-check-input"
+                  id="acceptedTerms"
+                  name="acceptedTerms"
+                  type="checkbox"
+                  value="true"
+                  th:checked="${acceptedTerms}"
+                  required
+                />
+                <label class="form-check-label" for="acceptedTerms">
+                  Tôi đồng ý với điều khoản sử dụng.
+                </label>
+              </div>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  id="acceptedPhoneProcessing"
+                  name="acceptedPhoneProcessing"
+                  type="checkbox"
+                  value="true"
+                  aria-describedby="phone-processing"
+                  th:checked="${acceptedPhoneProcessing}"
+                  required
+                />
+                <label class="form-check-label" for="acceptedPhoneProcessing">
+                  Tôi đồng ý cho xử lý số điện thoại của tôi để gửi mã và xác thực đăng ký.
+                </label>
+              </div>
+              <p id="phone-processing" class="small mt-2 mb-0">
+                Khi bạn yêu cầu mã, số điện thoại được gửi tới Google để xác thực qua SMS và phòng
+                chống lạm dụng. Lượt yêu cầu được ghi lại để áp dụng giới hạn gửi mã.
+              </p>
+            </fieldset>
             <div
               class="g-recaptcha mb-3"
               data-size="compact"
@@ -47,7 +102,7 @@
           <p
             th:text="|Nhập mã SMS cho số ${challenge.phone()}. Mã có hiệu lực tối đa 10 phút.|"
           ></p>
-          <form method="post" th:action="@{/register/verify}">
+          <form novalidate method="post" th:action="@{/register/verify}">
             <label class="form-label" for="code">Mã xác thực (OTP)</label>
             <input
               class="form-control mb-3"
