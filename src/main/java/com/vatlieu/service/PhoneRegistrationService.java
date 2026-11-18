@@ -1,5 +1,7 @@
 package com.vatlieu.service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class PhoneRegistrationService {
 
   public static final int CONSENT_VERSION = 1;
+  private static final Duration DETAILS_WINDOW = Duration.ofMinutes(10);
 
   private final JdbcTemplate jdbc;
   private final TransactionTemplate transactions;
@@ -20,6 +23,17 @@ public class PhoneRegistrationService {
   private final PhoneVerification sms;
 
   public record Challenge(UUID id, String phone) {}
+
+  public record VerifiedRegistration(
+    String phone,
+    int consentVersion,
+    OffsetDateTime consentedAt,
+    Instant expiresAt
+  ) {
+    public boolean expired() {
+      return !Instant.now().isBefore(expiresAt);
+    }
+  }
 
   private record SmsAttempt(String sessionInfo, int consentVersion, OffsetDateTime consentedAt) {}
 
@@ -100,14 +114,10 @@ public class PhoneRegistrationService {
     return challenge;
   }
 
-  public void complete(Challenge challenge, String code, String fullName, String password) {
+  public VerifiedRegistration verify(Challenge challenge, String code) {
     if (challenge == null) throw new IllegalArgumentException(
       "Phiên đăng ký đã hết. Hãy yêu cầu mã mới."
     );
-    if (
-      fullName == null || fullName.isBlank() || fullName.trim().length() > 100
-    ) throw new IllegalArgumentException("Họ tên cần từ 1 đến 100 ký tự.");
-    AccountService.validatePassword(password);
     if (code == null || !code.matches("[0-9]{6}")) throw invalidCode();
     var attempts = jdbc.query(
       """
@@ -128,27 +138,41 @@ public class PhoneRegistrationService {
     if (attempts.isEmpty()) throw invalidCode();
     SmsAttempt attempt = attempts.get(0);
     if (!sms.approved(attempt.sessionInfo(), challenge.phone(), code)) throw invalidCode();
-    String hash = passwords.encode(password);
-    transactions.executeWithoutResult(status -> {
-      int consumed = jdbc.update(
-        "UPDATE registration_sms SET firebase_session_info=NULL WHERE id=? AND firebase_session_info=?",
-        challenge.id(),
-        attempt.sessionInfo()
-      );
-      if (consumed == 0) throw invalidCode();
-      jdbc.update(
-        """
-        INSERT INTO app_user(username,full_name,password,role,active,pending_approval,must_change_password,
-          registration_consent_version,registration_consented_at)
-        VALUES (?,?,?,'STAFF',false,true,false,?,?) ON CONFLICT (username) DO NOTHING
-        """,
-        challenge.phone(),
-        fullName.trim(),
-        hash,
-        attempt.consentVersion(),
-        attempt.consentedAt()
-      );
-    });
+    // Chỉ một yêu cầu được chuyển tiếp với cùng một mã xác thực.
+    int consumed = jdbc.update(
+      "UPDATE registration_sms SET firebase_session_info=NULL WHERE id=? AND firebase_session_info=?",
+      challenge.id(),
+      attempt.sessionInfo()
+    );
+    if (consumed == 0) throw invalidCode();
+    return new VerifiedRegistration(
+      challenge.phone(),
+      attempt.consentVersion(),
+      attempt.consentedAt(),
+      Instant.now().plus(DETAILS_WINDOW)
+    );
+  }
+
+  public void complete(VerifiedRegistration verified, String fullName, String password) {
+    if (verified == null || verified.expired()) throw new IllegalArgumentException(
+      "Phiên đăng ký đã hết. Hãy yêu cầu mã mới."
+    );
+    if (
+      fullName == null || fullName.isBlank() || fullName.trim().length() > 100
+    ) throw new IllegalArgumentException("Họ tên cần từ 1 đến 100 ký tự.");
+    AccountService.validatePassword(password);
+    jdbc.update(
+      """
+      INSERT INTO app_user(username,full_name,password,role,active,pending_approval,must_change_password,
+        registration_consent_version,registration_consented_at)
+      VALUES (?,?,?,'STAFF',false,true,false,?,?) ON CONFLICT (username) DO NOTHING
+      """,
+      verified.phone(),
+      fullName.trim(),
+      passwords.encode(password),
+      verified.consentVersion(),
+      verified.consentedAt()
+    );
   }
 
   private IllegalArgumentException invalidCode() {

@@ -62,7 +62,7 @@ class PhoneVerificationTest {
     assertThat(sms.approved("session-from-firebase", "0981234567", "000000")).isFalse();
     assertThatThrownBy(() -> sms.send("0981234567", "captcha"))
       .isInstanceOf(IllegalArgumentException.class)
-      .hasMessageContaining("Chưa gửi được mã SMS")
+      .hasMessageContaining("Vui lòng liên hệ quản lý")
       .hasMessageNotContaining("Firebase")
       .hasMessageNotContaining("BILLING_NOT_ENABLED");
     assertThatThrownBy(() -> sms.send("0981234567", "captcha")).isInstanceOf(

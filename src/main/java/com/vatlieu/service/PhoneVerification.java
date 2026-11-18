@@ -92,6 +92,11 @@ public class PhoneVerification {
         .findFirst()
         .orElse("UNKNOWN");
       log.warn("Gửi mã SMS thất bại. HTTP {}, mã lỗi {}", e.getStatusCode().value(), reason);
+      if ("BILLING_NOT_ENABLED".equals(reason)) {
+        throw new IllegalArgumentException(
+          "Cửa hàng chưa thể gửi mã SMS. Vui lòng liên hệ quản lý."
+        );
+      }
       if (e instanceof HttpClientErrorException.BadRequest) {
         throw new IllegalArgumentException(
           "Chưa gửi được mã SMS. Hãy kiểm tra số điện thoại và xác nhận lại reCAPTCHA."

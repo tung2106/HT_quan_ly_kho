@@ -2,7 +2,9 @@ package com.vatlieu.web;
 
 import com.vatlieu.service.PhoneRegistrationService;
 import com.vatlieu.service.PhoneRegistrationService.Challenge;
+import com.vatlieu.service.PhoneRegistrationService.VerifiedRegistration;
 import com.vatlieu.service.PhoneVerification;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class PhoneRegistrationController {
 
   private static final String CHALLENGE = "phoneRegistration";
+  private static final String VERIFIED = "verifiedPhoneRegistration";
   private final PhoneRegistrationService registrations;
   private final PhoneVerification verification;
 
@@ -33,7 +36,7 @@ public class PhoneRegistrationController {
         model.addAttribute("error", e.getMessage());
       }
     }
-    return "register";
+    return view(model, "phone", "Đăng ký bằng số điện thoại");
   }
 
   @PostMapping
@@ -51,6 +54,7 @@ public class PhoneRegistrationController {
         CHALLENGE,
         registrations.start(phone, captcha, consentVersion, acceptedTerms, acceptedPhoneProcessing)
       );
+      session.removeAttribute(VERIFIED);
       return "redirect:/register/verify";
     } catch (IllegalArgumentException e) {
       model.addAttribute("phone", phone);
@@ -69,29 +73,63 @@ public class PhoneRegistrationController {
     Model model
   ) {
     if (challenge == null) return "redirect:/register";
-    model.addAttribute("challenge", challenge);
-    return "register";
+    return view(model, "otp", "Nhập mã xác thực");
   }
 
   @PostMapping("/verify")
   public String verify(
     @SessionAttribute(name = CHALLENGE, required = false) Challenge challenge,
     @RequestParam String code,
-    @RequestParam String fullName,
-    @RequestParam String password,
+    HttpServletRequest request,
     HttpSession session,
     Model model
   ) {
     if (challenge == null) return "redirect:/register";
     try {
-      registrations.complete(challenge, code, fullName, password);
+      VerifiedRegistration verified = registrations.verify(challenge, code);
+      request.changeSessionId();
       session.removeAttribute(CHALLENGE);
+      session.setAttribute(VERIFIED, verified);
+      return "redirect:/register/details";
+    } catch (IllegalArgumentException e) {
+      model.addAttribute("error", e.getMessage());
+      return verifyForm(challenge, model);
+    }
+  }
+
+  @GetMapping("/details")
+  public String detailsForm(
+    @SessionAttribute(name = VERIFIED, required = false) VerifiedRegistration verified,
+    Model model
+  ) {
+    if (verified == null) return "redirect:/register";
+    if (verified.expired()) return "redirect:/register?expired";
+    return view(model, "details", "Hoàn tất đăng ký");
+  }
+
+  @PostMapping("/details")
+  public String complete(
+    @SessionAttribute(name = VERIFIED, required = false) VerifiedRegistration verified,
+    @RequestParam String fullName,
+    @RequestParam String password,
+    HttpSession session,
+    Model model
+  ) {
+    if (verified == null) return "redirect:/register";
+    try {
+      registrations.complete(verified, fullName, password);
+      session.removeAttribute(VERIFIED);
       return "redirect:/login?registered";
     } catch (IllegalArgumentException e) {
-      model.addAttribute("challenge", challenge);
       model.addAttribute("fullName", fullName);
       model.addAttribute("error", e.getMessage());
-      return "register";
+      return detailsForm(verified, model);
     }
+  }
+
+  private String view(Model model, String step, String title) {
+    model.addAttribute("registrationStep", step);
+    model.addAttribute("pageTitle", title);
+    return "register";
   }
 }

@@ -10,7 +10,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.vatlieu.service.PhoneRegistrationService;
+import com.vatlieu.service.PhoneRegistrationService.VerifiedRegistration;
 import com.vatlieu.service.PhoneVerification;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -65,6 +68,7 @@ class PhoneRegistrationPostgresTest {
       .perform(get("/register"))
       .andExpect(status().isOk())
       .andExpect(content().string(containsString("Nhận mã qua SMS")))
+      .andExpect(content().string(containsString("Điều khoản và quyền riêng tư")))
       .andExpect(content().string(containsString("name=\"acceptedTerms\"")))
       .andExpect(content().string(containsString("name=\"acceptedPhoneProcessing\"")))
       .andExpect(content().string(not(containsString("checked=\"checked\""))));
@@ -75,17 +79,42 @@ class PhoneRegistrationPostgresTest {
     mvc
       .perform(get("/register/verify").session(session))
       .andExpect(status().isOk())
-      .andExpect(content().string(containsString(PHONE)));
+      .andExpect(content().string(containsString("name=\"code\"")))
+      .andExpect(content().string(not(containsString("name=\"fullName\""))))
+      .andExpect(content().string(not(containsString("name=\"password\""))));
+    String originalSessionId = session.getId();
+    mvc
+      .perform(post("/register/verify").with(csrf()).session(session).param("code", "123456"))
+      .andExpect(redirectedUrl("/register/details"));
+    assertThat(session.getId()).isNotEqualTo(originalSessionId);
+    assertThat(
+      jdbc.queryForObject("SELECT count(*) FROM app_user WHERE username=?", Integer.class, PHONE)
+    ).isZero();
+    mvc.perform(get("/register/verify").session(session)).andExpect(redirectedUrl("/register"));
+    mvc
+      .perform(get("/register/details").session(session))
+      .andExpect(status().isOk())
+      .andExpect(content().string(containsString("name=\"fullName\"")))
+      .andExpect(content().string(not(containsString("name=\"code\""))));
     mvc
       .perform(
-        post("/register/verify")
+        post("/register/details")
           .with(csrf())
           .session(session)
-          .param("code", "123456")
+          .param("fullName", "Người mới")
+          .param("password", "ngắn")
+      )
+      .andExpect(model().attributeExists("error"));
+    mvc
+      .perform(
+        post("/register/details")
+          .with(csrf())
+          .session(session)
           .param("fullName", "Người mới")
           .param("password", PASSWORD)
       )
       .andExpect(redirectedUrl("/login?registered"));
+    mvc.perform(get("/register/details").session(session)).andExpect(redirectedUrl("/register"));
     assertThat(
       jdbc.queryForObject(
         "SELECT role='STAFF' AND NOT active AND pending_approval AND NOT must_change_password FROM app_user WHERE username=?",
@@ -125,6 +154,38 @@ class PhoneRegistrationPostgresTest {
   }
 
   @Test
+  void accountDetailsRequireOwnVerifiedUnexpiredSessionAndCsrf() throws Exception {
+    mvc
+      .perform(
+        post("/register/details")
+          .with(csrf())
+          .param("fullName", "Tên thử")
+          .param("password", PASSWORD)
+      )
+      .andExpect(redirectedUrl("/register"));
+    mvc
+      .perform(post("/register/details").param("fullName", "Tên thử").param("password", PASSWORD))
+      .andExpect(status().isForbidden());
+    var expiredSession = new MockHttpSession();
+    expiredSession.setAttribute(
+      "verifiedPhoneRegistration",
+      new VerifiedRegistration(PHONE, CONSENT_VERSION, OffsetDateTime.now(), Instant.EPOCH)
+    );
+    mvc
+      .perform(
+        post("/register/details")
+          .with(csrf())
+          .session(expiredSession)
+          .param("fullName", "Tên thử")
+          .param("password", PASSWORD)
+      )
+      .andExpect(redirectedUrl("/register?expired"));
+    assertThat(
+      jdbc.queryForObject("SELECT count(*) FROM app_user WHERE username=?", Integer.class, PHONE)
+    ).isZero();
+  }
+
+  @Test
   void cannotSendOtpWithoutBothChoicesAndCurrentConsentVersion() throws Exception {
     String version = Integer.toString(CONSENT_VERSION);
     for (String[] fields : new String[][] {
@@ -160,14 +221,7 @@ class PhoneRegistrationPostgresTest {
     verify(sms, times(1)).send(PHONE, CAPTCHA);
     for (int i = 0; i < 6; i++) {
       mvc
-        .perform(
-          post("/register/verify")
-            .with(csrf())
-            .session(session)
-            .param("code", "000000")
-            .param("fullName", "Tên thử")
-            .param("password", PASSWORD)
-        )
+        .perform(post("/register/verify").with(csrf()).session(session).param("code", "000000"))
         .andExpect(model().attributeExists("error"));
     }
     verify(sms, times(5)).approved(SID, PHONE, "000000");
@@ -176,14 +230,7 @@ class PhoneRegistrationPostgresTest {
       PHONE
     );
     mvc
-      .perform(
-        post("/register/verify")
-          .with(csrf())
-          .session(session)
-          .param("code", "123456")
-          .param("fullName", "Tên thử")
-          .param("password", PASSWORD)
-      )
+      .perform(post("/register/verify").with(csrf()).session(session).param("code", "123456"))
       .andExpect(model().attributeExists("error"));
     verify(sms, never()).approved(SID, PHONE, "123456");
     assertThat(

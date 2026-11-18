@@ -1,15 +1,15 @@
 <!doctype html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-  <head th:replace="~{fragments :: head('Đăng ký tài khoản')}"></head>
+  <head th:replace="~{fragments :: head(${pageTitle})}"></head>
   <body>
     <main class="container py-4" style="max-width: 460px">
       <div class="card card-body">
-        <h1
-          class="h4"
-          th:text="${challenge == null ? 'Đăng ký bằng số điện thoại' : 'Xác thực số điện thoại'}"
-        ></h1>
+        <h1 class="h4" th:text="${pageTitle}"></h1>
         <div th:replace="~{fragments :: alerts}"></div>
-        <th:block th:if="${challenge == null}">
+        <th:block th:if="${registrationStep == 'phone'}">
+          <p class="alert alert-info" role="status" th:if="${param.expired}">
+            Phiên đăng ký đã hết hạn. Hãy yêu cầu mã mới để tiếp tục.
+          </p>
           <p>Sau khi xác thực số điện thoại, bạn cần quản lý duyệt để vào kho.</p>
           <p th:unless="${smsEnabled}" class="alert alert-info" role="status">
             Cửa hàng chưa bật gửi mã SMS. Hãy liên hệ quản lý để được cấp tài khoản.
@@ -27,23 +27,27 @@
               th:value="${phone}"
               required
             />
-            <fieldset class="mb-3">
-              <legend class="fs-6 fw-semibold mb-2">Điều khoản và quyền riêng tư</legend>
-              <details class="mb-2">
-                <summary>Điều khoản sử dụng</summary>
-                <p class="small mt-2 mb-0">
-                  Kho gia đình dành cho thành viên được quản lý duyệt. Dùng tài khoản của bạn để làm
-                  việc trong kho và giữ riêng mật khẩu, mã xác thực. Báo quản lý nếu nghi ngờ có
-                  người khác sử dụng tài khoản của bạn.
-                </p>
-              </details>
+            <fieldset class="mb-3" aria-labelledby="registration-consent">
               <details class="mb-3">
-                <summary>Thông tin về dữ liệu đăng ký</summary>
+                <summary id="registration-consent" class="fw-semibold">
+                  Điều khoản và quyền riêng tư
+                </summary>
                 <div class="small mt-2">
+                  <h2 class="small fw-semibold mb-1">Điều khoản sử dụng</h2>
+                  <p>
+                    Kho gia đình dành cho thành viên được quản lý duyệt. Dùng tài khoản của bạn để
+                    làm việc trong kho và giữ riêng mật khẩu, mã xác thực. Báo quản lý nếu nghi ngờ
+                    có người khác sử dụng tài khoản của bạn.
+                  </p>
+                  <h2 class="small fw-semibold mb-1">Thông tin về dữ liệu đăng ký</h2>
                   <p>
                     Kho gia đình lưu họ tên, số điện thoại và bản băm mật khẩu để tạo tài khoản,
                     đăng nhập và quản lý quyền truy cập. Hệ thống lưu thời điểm và phiên bản nội
                     dung bạn đã chấp thuận.
+                  </p>
+                  <p id="phone-processing">
+                    Khi bạn yêu cầu mã, số điện thoại được gửi tới Google để xác thực qua SMS và
+                    phòng chống lạm dụng. Lượt yêu cầu được ghi lại để áp dụng giới hạn gửi mã.
                   </p>
                   <p class="mb-0">
                     Liên hệ quản lý kho nếu bạn muốn hỏi về dữ liệu của mình hoặc đề nghị ngừng sử
@@ -80,10 +84,6 @@
                   Tôi đồng ý cho xử lý số điện thoại của tôi để gửi mã và xác thực đăng ký.
                 </label>
               </div>
-              <p id="phone-processing" class="small mt-2 mb-0">
-                Khi bạn yêu cầu mã, số điện thoại được gửi tới Google để xác thực qua SMS và phòng
-                chống lạm dụng. Lượt yêu cầu được ghi lại để áp dụng giới hạn gửi mã.
-              </p>
             </fieldset>
             <div
               class="g-recaptcha mb-3"
@@ -98,10 +98,10 @@
             defer
           ></script>
         </th:block>
-        <th:block th:if="${challenge != null}">
-          <p
-            th:text="|Nhập mã SMS cho số ${challenge.phone()}. Mã có hiệu lực tối đa 10 phút.|"
-          ></p>
+        <th:block th:if="${registrationStep == 'otp'}">
+          <p id="otp-hint">
+            Nhập mã 6 số đã gửi đến số điện thoại bạn vừa nhập. Mã có hiệu lực tối đa 10 phút.
+          </p>
           <form novalidate method="post" th:action="@{/register/verify}">
             <label class="form-label" for="code">Mã xác thực (OTP)</label>
             <input
@@ -110,10 +110,20 @@
               name="code"
               inputmode="numeric"
               autocomplete="one-time-code"
+              aria-describedby="otp-hint"
               pattern="[0-9]{6}"
               maxlength="6"
               required
             />
+            <button class="btn btn-primary w-100">Xác thực mã</button>
+          </form>
+          <a class="btn btn-outline-primary mt-3" th:href="@{/register}">
+            Đổi số hoặc yêu cầu mã mới
+          </a>
+        </th:block>
+        <th:block th:if="${registrationStep == 'details'}">
+          <p role="status">Đã xác thực số điện thoại. Điền thông tin để gửi yêu cầu cho quản lý.</p>
+          <form novalidate method="post" th:action="@{/register/details}">
             <label class="form-label" for="fullName">Họ tên</label>
             <input
               class="form-control mb-3"
@@ -134,11 +144,8 @@
               minlength="12"
               required
             />
-            <button class="btn btn-primary w-100">Xác thực và đăng ký</button>
+            <button class="btn btn-primary w-100">Gửi yêu cầu đăng ký</button>
           </form>
-          <a class="btn btn-outline-primary mt-3" th:href="@{/register}">
-            Đổi số hoặc yêu cầu mã mới
-          </a>
         </th:block>
         <a class="btn btn-link mt-2" th:href="@{/login}">Về đăng nhập</a>
       </div>

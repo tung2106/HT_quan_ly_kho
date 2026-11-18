@@ -2,7 +2,11 @@
   const script = document.querySelector('script[data-home]');
   const home = script.dataset.home;
   const storageKey = 'vatlieu-pages:' + home;
-  if (['login', 'register', 'register/verify'].some((path) => location.pathname === home + path)) {
+  if (
+    ['login', 'register', 'register/verify', 'register/details'].some(
+      (path) => location.pathname === home + path
+    )
+  ) {
     try {
       sessionStorage.removeItem(storageKey);
     } catch (_) {
