@@ -56,8 +56,8 @@ Giao diện như một cuốn sổ kho mở trên quầy: tên hàng và số ti
 
 Dấu hiệu nhận diện: nền xanh trời nhạt, mây trắng nhẹ ở ngoài vùng đọc;
 mèo may mắn ở đầu trang chủ và trong màn hình chờ theo yêu cầu của người dùng.
-Giữ mèo khi làm gọn giao diện, không thay bằng icon kho. Mèo trang chủ rộng 88–112px,
-giữ tỉ lệ ảnh và đứng yên để các nút chức năng vẫn dễ thấy.
+Khung mèo ở trang chủ rộng 88–112px và luôn mở đầu bằng ảnh mèo ôm tiền vàng.
+Người dùng vuốt ngang, kéo chuột hoặc dùng phím mũi tên để đổi ảnh. Khung giữ nguyên kích thước.
 Hạn chế hình lớn, bóng đậm và thẻ quá cao.
 Có giao diện Sáng/Tối trong Cài đặt; mặc định Sáng, nhớ lựa chọn trên trình duyệt.
 Phông hệ thống có dấu tiếng Việt, không tải thêm phông ngoài.

@@ -9,13 +9,44 @@
           <h1>Quản lý cửa hàng</h1>
           <p>Vật liệu xây dựng &amp; nông sản</p>
         </div>
-        <img
-          class="home-cat"
-          th:src="@{/images/loading-cat.png}"
-          alt="Mèo may mắn ôm tiền vàng"
-          width="112"
-          height="162"
-        />
+        <div class="home-cat-gallery" role="group" aria-label="Ảnh mèo">
+          <div class="home-cat-frame" aria-live="polite" aria-atomic="true">
+            <img
+              th:src="@{/images/loading-cat.png}"
+              alt="Mèo may mắn ôm tiền vàng"
+              width="112"
+              height="162"
+              draggable="false"
+            />
+          </div>
+          <template>
+            <img th:src="@{/images/home-cats/tien-viet.webp}" alt="Mèo bên tờ tiền Việt Nam" />
+            <img
+              th:src="@{/images/home-cats/tot-nghiep.webp}"
+              alt="Mèo đội mũ tốt nghiệp cầm hai thỏi vàng"
+            />
+            <img th:src="@{/images/home-cats/tui-tien.webp}" alt="Mèo ôm túi tiền" />
+            <img th:src="@{/images/home-cats/om-tien.webp}" alt="Mèo vàng ôm tiền khi ngủ" />
+            <img
+              th:src="@{/images/home-cats/day-chuyen.webp}"
+              alt="Mèo đeo dây chuyền bên xe chở tiền"
+            />
+            <img
+              th:src="@{/images/home-cats/nam-tren-tien.webp}"
+              alt="Mèo nằm trên những xấp tiền"
+            />
+            <img
+              th:src="@{/images/home-cats/meo-xam.webp}"
+              alt="Mèo xám giơ chân giữa những tờ tiền"
+            />
+          </template>
+          <button type="button" data-step="-1" aria-label="Ảnh mèo trước" hidden>
+            <svg th:replace="~{fragments :: icon('chevron')}"></svg>
+          </button>
+          <button type="button" data-step="1" aria-label="Ảnh mèo tiếp theo" hidden>
+            <svg th:replace="~{fragments :: icon('chevron')}"></svg>
+          </button>
+        </div>
       </header>
       <h2 class="h5 mt-3 mb-3">Ghi giao dịch</h2>
       <div class="home-grid">
@@ -87,5 +118,6 @@
         </a>
       </div>
     </main>
+    <script defer th:src="@{/js/home-cats.js}"></script>
   </body>
 </html>
