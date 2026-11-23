@@ -1,6 +1,7 @@
 package com.vatlieu.config;
 
 import com.vatlieu.service.AccountService;
+import com.vatlieu.service.LoginRateLimit;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.IOException;
@@ -15,7 +16,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Configuration
@@ -32,7 +35,8 @@ public class SecurityConfig {
   }
 
   @Bean
-  SecurityFilterChain security(HttpSecurity http, JdbcTemplate jdbc) throws Exception {
+  SecurityFilterChain security(HttpSecurity http, JdbcTemplate jdbc, LoginRateLimit loginLimit)
+    throws Exception {
     http
       .headers(headers ->
         headers
@@ -71,6 +75,32 @@ public class SecurityConfig {
           .deleteCookies("JSESSIONID")
       )
       .exceptionHandling(errors -> errors.accessDeniedPage("/error/403"));
+    var loginPost = new AntPathRequestMatcher("/login", "POST");
+    http.addFilterBefore(
+      new OncePerRequestFilter() {
+        @Override
+        protected void doFilterInternal(
+          HttpServletRequest request,
+          HttpServletResponse response,
+          FilterChain chain
+        ) throws ServletException, IOException {
+          if (loginPost.matches(request)) {
+            int retry = loginLimit.retryAfterSeconds(request.getParameter("username"));
+            if (retry > 0) {
+              response.setStatus(429);
+              response.setHeader("Retry-After", Integer.toString(retry));
+              response.setContentType("text/plain;charset=UTF-8");
+              response
+                .getWriter()
+                .write("Đã đạt giới hạn đăng nhập. Vui lòng thử lại sau " + retry / 60 + " phút.");
+              return;
+            }
+          }
+          chain.doFilter(request, response);
+        }
+      },
+      UsernamePasswordAuthenticationFilter.class
+    );
     http.addFilterBefore(
       new OncePerRequestFilter() {
         @Override

@@ -90,7 +90,10 @@ khi tạo mới Blueprint; chỉnh mật khẩu về sau tại Environment của
 - Trang `/login` mở được qua HTTPS; chưa đăng nhập không xem được vốn, nợ hoặc phiếu.
 - Mỗi thành viên dùng tài khoản riêng. Cấp quyền nhân viên cho người chỉ cần bán hàng.
   Bật xác thực hai bước cho các tài khoản có quyền quản trị GitHub, Render và Neon.
-- Quản lý đăng nhập, đổi mật khẩu và đăng xuất được; STAFF không xem giá vốn và phiếu người khác.
+- Kiểm tra nhân viên xem được vốn và phiếu chung. Quản trị tài khoản chỉ dành cho quản lý.
+- Phiên hết hạn sau 30 phút không hoạt động. Login tính mọi lần gửi có CSRF hợp lệ,
+  tối đa 8 lần cho cùng tên đăng nhập trong 10 phút và 120 lần cho cả web trong một phút.
+  Khi đạt ngưỡng, máy chủ trả HTTP 429 và thời gian chờ trong `Retry-After`.
 - Với dữ liệu thử: nhập 6 kg × 10.000 VNĐ, trả một phần; xuất bán một phần từ đúng lô;
   kiểm tra tồn, vốn, nợ và tất toán. Không tạo giao dịch thử vào dữ liệu thật của cửa hàng.
 - Mở lại trên điện thoại: tiền có dấu chấm và VNĐ; ngày giờ ghi nhận theo Việt Nam.
@@ -109,9 +112,8 @@ trong dashboard; miễn phí không có nghĩa tài nguyên vô hạn.
 có thể đợi khoảng một phút. Có hạn mức giờ chạy, băng thông và build. Phù hợp thử nghiệm,
 không đảm bảo luôn sẵn sàng. Không bật gói trả phí nếu chưa quyết định trả tiền.
 
-Dữ liệu nghiệp vụ lưu ở Neon nên không phụ thuộc ổ đĩa tạm của Render. Tuy vậy, cần xuất bản
-sao PostgreSQL (`pg_dump`) định kỳ ra máy/ổ lưu trữ riêng trước khi dùng cho giao dịch thật,
-và thử khôi phục vào CSDL khác. Chưa thiết lập sao lưu tự động hoặc chuyển dữ liệu local trong đợt này.
+Dữ liệu nghiệp vụ lưu ở Neon. Xem [thiết lập quyền PostgreSQL, sao lưu Drive và cảnh báo](BAO-MAT-VA-SAO-LUU.md)
+để cấp quyền riêng cho web, thử khôi phục và bật lịch sao lưu.
 
 ## 7. Khi có lỗi
 

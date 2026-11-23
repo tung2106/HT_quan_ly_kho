@@ -1,0 +1,67 @@
+name: Sao lưu kho và kiểm tra web
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 20 * * *' # 03:23 giờ Việt Nam
+permissions: {}
+concurrency:
+  group: kho-backup
+  cancel-in-progress: false
+jobs:
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Kiểm tra trang đăng nhập trên Render
+        run: |
+          curl --fail --silent --show-error --location --max-time 90 --retry 1 \
+            --output "$RUNNER_TEMP/login.html" https://kho-gia-dinh.onrender.com/login
+          grep -q 'name="username"' "$RUNNER_TEMP/login.html"
+
+  backup:
+    if: github.event_name == 'workflow_dispatch' || vars.DRIVE_BACKUP_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Cài công cụ sao lưu
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age rclone postgresql-client-16
+      - name: Sao lưu Neon và mã hóa trên máy chạy tạm thời
+        shell: bash
+        env:
+          PGHOST: ${{ secrets.BACKUP_PGHOST }}
+          PGDATABASE: ${{ secrets.BACKUP_PGDATABASE }}
+          PGUSER: ${{ secrets.BACKUP_PGUSER }}
+          PGPASSWORD: ${{ secrets.BACKUP_PGPASSWORD }}
+          PGSSLMODE: verify-full
+          PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt
+          PGCONNECT_TIMEOUT: '30'
+          RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+        run: |
+          set -euo pipefail
+          umask 077
+          : "${PGHOST:?Thiếu BACKUP_PGHOST}" "${PGDATABASE:?Thiếu BACKUP_PGDATABASE}" "${PGUSER:?Thiếu BACKUP_PGUSER}" "${PGPASSWORD:?Thiếu BACKUP_PGPASSWORD}"
+          [[ "$RECIPIENT" =~ ^age1[0-9a-z]{58}$ ]]
+          archive="kho-$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.dump.age"
+          cd "$RUNNER_TEMP"
+          trap 'rm -f -- kho.dump' EXIT
+          /usr/lib/postgresql/16/bin/pg_dump -w -Fc --no-owner --no-privileges -f kho.dump
+          /usr/lib/postgresql/16/bin/pg_restore --file=/dev/null kho.dump
+          age -r "$RECIPIENT" -o "$archive" kho.dump
+          echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
+      - name: Gửi bản đã mã hóa lên Drive riêng và đối chiếu SHA-256
+        shell: bash
+        env:
+          RCLONE_CONFIG_KHODRIVE_TYPE: drive
+          RCLONE_CONFIG_KHODRIVE_SCOPE: drive.file
+          RCLONE_CONFIG_KHODRIVE_TOKEN: ${{ secrets.BACKUP_DRIVE_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${RCLONE_CONFIG_KHODRIVE_TOKEN:?Thiếu BACKUP_DRIVE_TOKEN}"
+          cd "$RUNNER_TEMP"
+          target="khodrive:KhoGiaDinh-Backup/$ARCHIVE"
+          rclone copyto "$ARCHIVE" "$target"
+          local_hash=$(sha256sum < "$ARCHIVE")
+          drive_hash=$(rclone cat "$target" | sha256sum)
+          test "$local_hash" = "$drive_hash"

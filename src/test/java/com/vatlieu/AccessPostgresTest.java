@@ -60,6 +60,70 @@ class AccessPostgresTest {
   }
 
   @Test
+  void loginQuotaAppliesBeforeAuthenticationAndReopensAfterExpiry() throws Exception {
+    jdbc.update(
+      "INSERT INTO login_rate_limit VALUES ('user:acl-a', 7, now() + interval '10 minutes')"
+    );
+    loginAs("acl-a", password);
+    mvc
+      .perform(post("/login").with(csrf()).param("username", " ACL-A ").param("password", password))
+      .andExpect(status().isTooManyRequests())
+      .andExpect(header().string("Retry-After", "600"));
+    loginAs("acl-b", password);
+    jdbc.update("UPDATE login_rate_limit SET expires_at=now() WHERE bucket='user:acl-a'");
+    loginAs("acl-a", password);
+    assertThat(
+      jdbc.queryForObject(
+        "SELECT attempts FROM login_rate_limit WHERE bucket='user:acl-a'",
+        Integer.class
+      )
+    ).isOne();
+  }
+
+  @Test
+  void siteQuotaAppliesToAllIdentitiesAndInvalidCsrfConsumesNoQuota() throws Exception {
+    mvc
+      .perform(post("/login").param("username", "acl-b").param("password", password))
+      .andExpect(status().isForbidden());
+    assertThat(
+      jdbc.queryForObject("SELECT count(*) FROM login_rate_limit", Integer.class)
+    ).isZero();
+    jdbc.update("INSERT INTO login_rate_limit VALUES ('global', 120, now() + interval '1 minute')");
+    mvc
+      .perform(post("/login").with(csrf()).param("username", "acl-b").param("password", password))
+      .andExpect(status().isTooManyRequests())
+      .andExpect(header().string("Retry-After", "60"));
+    jdbc.update("UPDATE login_rate_limit SET expires_at=now() WHERE bucket='global'");
+    loginAs("acl-b", password);
+  }
+
+  @Test
+  void phoneAliasesShareOneLoginQuota() throws Exception {
+    jdbc.update(
+      "INSERT INTO login_rate_limit VALUES ('user:0912345678', 8, now() + interval '10 minutes')"
+    );
+    mvc
+      .perform(
+        post("/login")
+          .with(csrf())
+          .param("username", " +84 912 345 678 ")
+          .param("password", password)
+      )
+      .andExpect(status().isTooManyRequests());
+  }
+
+  @Test
+  void loginUsesBrowserSecurityHeadersAndNoCrossOriginAccess() throws Exception {
+    mvc
+      .perform(get("/login").secure(true).header("Origin", "https://example.org"))
+      .andExpect(status().isOk())
+      .andExpect(header().exists("Strict-Transport-Security"))
+      .andExpect(header().exists("Content-Security-Policy"))
+      .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+      .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
+  }
+
+  @Test
   @WithMockUser(username = "acl-owner", roles = "OWNER")
   void supplierCreateUsesSameValidationAsEdit() throws Exception {
     long before = jdbc.queryForObject("SELECT COUNT(*) FROM supplier", Long.class);
